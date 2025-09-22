@@ -52,7 +52,7 @@ This is the third paragraph. Wrap each paragraph with the paragraph tag to tell 
         <ul id="wd-my-books">
           <li>Dune</li>
           <li>Lord of the Rings</li>
-          <li>Ender's Game</li>
+          <li>Ender&apos;s Game</li>
           <li>Red Mars</li>
           <li>The Forever War</li>
         </ul>
