@@ -48,6 +48,18 @@ export default function Modules() {
             </li>
           </ul>
         </li>
+        <li className="wd-module">
+          <div className="wd-title">Week 4</div>
+          <ul className="wd-lessons">
+            <li className="wd-lesson">
+              <span className="wd-title">Designing Pages</span>
+              <ul className="wd-content">
+                <li className="wd-content-item">Advanced Design</li>
+                <li className="wd-content-item">Backend DB integration</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
       </ul>
     </div>
 );}
