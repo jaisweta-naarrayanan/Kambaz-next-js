@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { Form, Button } from "react-bootstrap";
 
 export default function Profile() {

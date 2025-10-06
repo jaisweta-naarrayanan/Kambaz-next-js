@@ -21,14 +21,15 @@ export default function Signup() {
           type="password"
           className="wd-password-verify mb-3"
         />
-        <Button
-          as={Link}
-          href="/Account/Profile"
-          variant="primary"
-          className="w-100 mb-2"
-        >
-          Sign up
-        </Button>
+        <Link href="/Account/Profile" passHref legacyBehavior>
+          <Button
+            as="a"
+            variant="primary"
+            className="w-100 mb-2"
+          >
+            Sign up
+          </Button>
+        </Link>
         <Link href="/Account/Signin">Sign in</Link>
       </Form>
     </div>
