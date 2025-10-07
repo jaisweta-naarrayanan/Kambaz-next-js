@@ -197,8 +197,8 @@ p#wd-id-selector-2 {
 
 #wd-screen-size-label {
   position: fixed;
-  top: 0;
-  left: 0;
+  bottom: 0;
+  right: 0;
   background-color: black;
   color: white;
   padding: 5px;

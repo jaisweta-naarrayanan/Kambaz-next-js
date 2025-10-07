@@ -1,6 +1,8 @@
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa6";
 import GreenCheckmark from "./GreenCheckmark";
+import { GoCircleSlash } from "react-icons/go";
+
 
 export default function ModulesControls() {
   return (
@@ -25,10 +27,10 @@ export default function ModulesControls() {
             <GreenCheckmark /> Publish modules only
           </DropdownItem>
           <DropdownItem id="wd-unpublish-all-modules-and-items">
-            Unpublish all modules and items
+            <GoCircleSlash /> Unpublish all modules and items
           </DropdownItem>
           <DropdownItem id="wd-unpublish-modules-only">
-            Unpublish modules only
+            <GoCircleSlash /> Unpublish modules only
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>
