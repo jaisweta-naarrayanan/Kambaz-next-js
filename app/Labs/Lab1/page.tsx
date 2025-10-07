@@ -94,6 +94,48 @@ This is the third paragraph. Wrap each paragraph with the paragraph tag to tell 
               <td>2/17/21</td>
               <td>95</td>
             </tr>
+            <tr>
+              <td>Q4</td>
+              <td>C</td>
+              <td>2/19/21</td>
+              <td>85</td>
+            </tr>
+            <tr>
+              <td>Q5</td>
+              <td>C++</td>
+              <td>2/21/21</td>
+              <td>80</td>
+            </tr>
+            <tr>
+              <td>Q6</td>
+              <td>Java</td>
+              <td>2/23/21</td>
+              <td>95</td>
+            </tr>
+            <tr>
+              <td>Q7</td>
+              <td>Python</td>
+              <td>2/23/21</td>
+              <td>93</td>
+            </tr>
+            <tr>
+              <td>Q8</td>
+              <td>R</td>
+              <td>2/25/21</td>
+              <td>89</td>
+            </tr>
+            <tr>
+              <td>Q9</td>
+              <td>SQL</td>
+              <td>2/27/21</td>
+              <td>95</td>
+            </tr>
+            <tr>
+              <td>Q10</td>
+              <td>Ruby</td>
+              <td>2/29/21</td>
+              <td>89</td>
+            </tr>
           </tbody>
           <tfoot>
             <tr>
