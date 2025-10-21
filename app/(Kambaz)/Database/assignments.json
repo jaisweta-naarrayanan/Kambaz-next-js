@@ -1,0 +1,83 @@
+[
+  {
+    "_id": "A101",
+    "title": "Propulsion Assignment",
+    "course": "RS101",
+    "description": "Design a liquid-fueled rocket engine nozzle and submit calculations and drawings.",
+    "points": 100,
+    "availableFrom": "2024-05-06T00:00",
+    "dueDate": "2024-05-13T23:59"
+  },
+  {
+    "_id": "A102",
+    "title": "Combustion Analysis",
+    "course": "RS101",
+    "description": "Analyze combustion chamber performance and present a report with simulation results.",
+    "points": 100,
+    "availableFrom": "2024-05-13T00:00",
+    "dueDate": "2024-05-20T23:59"
+  },
+  {
+    "_id": "A103",
+    "title": "Nozzle Design Project",
+    "course": "RS101",
+    "description": "Complete the nozzle design project including testing plan and expected performance metrics.",
+    "points": 100,
+    "availableFrom": "2024-05-20T00:00",
+    "dueDate": "2024-05-27T23:59"
+  },
+  {
+    "_id": "A201",
+    "title": "Aerodynamics Quiz",
+    "course": "RS102",
+    "description": "Timed quiz covering lift, drag, and airfoil theory.",
+    "points": 25,
+    "availableFrom": "2024-04-01T00:00",
+    "dueDate": "2024-04-01T23:59"
+  },
+  {
+    "_id": "A202",
+    "title": "Flow Analysis",
+    "course": "RS102",
+    "description": "Solve flow field problems using potential flow methods and CFD snapshots.",
+    "points": 75,
+    "availableFrom": "2024-04-08T00:00",
+    "dueDate": "2024-04-15T23:59"
+  },
+  {
+    "_id": "A203",
+    "title": "Heating Analysis",
+    "course": "RS102",
+    "description": "Perform thermal analysis for a re-entry body and submit a short report.",
+    "points": 100,
+    "availableFrom": "2024-04-15T00:00",
+    "dueDate": "2024-04-22T23:59"
+  },
+  {
+    "_id": "A301",
+    "title": "Structural Design Task",
+    "course": "RS103",
+    "description": "Design a primary structure element to meet given stiffness and strength requirements.",
+    "points": 100,
+    "availableFrom": "2024-03-01T00:00",
+    "dueDate": "2024-03-15T23:59"
+  },
+  {
+    "_id": "A302",
+    "title": "Orbital Calculations",
+    "course": "RS103",
+    "description": "Compute transfer orbits and delta-v budgets for a sample mission.",
+    "points": 100,
+    "availableFrom": "2024-03-16T00:00",
+    "dueDate": "2024-03-30T23:59"
+  },
+  {
+    "_id": "A303",
+    "title": "Systems Engineering Exam",
+    "course": "RS103",
+    "description": "Closed-book exam covering systems engineering concepts used in the course.",
+    "points": 200,
+    "availableFrom": "2024-04-01T00:00",
+    "dueDate": "2024-04-15T23:59"
+  }
+]

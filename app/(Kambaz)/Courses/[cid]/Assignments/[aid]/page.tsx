@@ -1,7 +1,22 @@
 "use client";
+import { useParams } from "next/navigation";
 import { Form, Button } from "react-bootstrap";
+import { assignments } from "@/app/(Kambaz)/Database";
+import { Assignment } from "@/app/(Kambaz)/Database/types";
 
 export default function AssignmentEditor() {
+  const { aid } = useParams();
+  
+  // Find the assignment by ID
+  const assignment = assignments.find((a: Assignment) => a._id === aid);
+
+  // Default values if assignment not found
+  const assignmentName = assignment?.title || "New Assignment";
+  const assignmentDescription = assignment?.description || "";
+  const assignmentPoints = assignment?.points || 100;
+  const assignmentDueDate = assignment?.dueDate || "2024-05-13T23:59";
+  const assignmentAvailableFrom = assignment?.availableFrom || "2024-05-06T00:00";
+
   return (
     <div id="wd-assignments-editor" className="p-4">
       <Form>
@@ -10,7 +25,7 @@ export default function AssignmentEditor() {
           <Form.Control
             id="wd-name"
             type="text"
-            defaultValue="A1"
+            defaultValue={assignmentName}
           />
         </Form.Group>
 
@@ -20,18 +35,7 @@ export default function AssignmentEditor() {
             as="textarea"
             id="wd-description"
             rows={10}
-            defaultValue={`The assignment is available online
-
-Submit a link to the landing page of your Web application running on Netlify.
-
-The landing page should include the following:
-
-- Your full name and section
-- Links to each of the lab assignments
-- Link to the Kanbas application
-- Links to all relevant source code repositories
-
-The Kanbas application should include a link to navigate back to the landing page.`}
+            defaultValue={assignmentDescription}
           />
         </Form.Group>
 
@@ -43,7 +47,7 @@ The Kanbas application should include a link to navigate back to the landing pag
             <Form.Control
               id="wd-points"
               type="number"
-              defaultValue={100}
+              defaultValue={assignmentPoints}
             />
           </div>
         </Form.Group>
@@ -149,7 +153,7 @@ The Kanbas application should include a link to navigate back to the landing pag
               <Form.Control
                 id="wd-due-date"
                 type="datetime-local"
-                defaultValue="2024-05-13T23:59"
+                defaultValue={assignmentDueDate}
                 className="mb-3"
               />
 
@@ -161,7 +165,7 @@ The Kanbas application should include a link to navigate back to the landing pag
                   <Form.Control
                     id="wd-available-from"
                     type="datetime-local"
-                    defaultValue="2024-05-06T00:00"
+                    defaultValue={assignmentAvailableFrom}
                   />
                 </div>
 
