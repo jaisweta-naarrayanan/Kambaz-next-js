@@ -177,7 +177,7 @@ export default function AssignmentEditor() {
                   <Form.Control
                     id="wd-available-until"
                     type="datetime-local"
-                    defaultValue="2024-05-20T23:59"
+                    defaultValue={assignmentDueDate}
                   />
                 </div>
               </div>
