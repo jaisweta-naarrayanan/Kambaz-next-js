@@ -1,11 +1,12 @@
 "use client";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Form, Button } from "react-bootstrap";
 import { assignments } from "@/app/(Kambaz)/Database";
 import { Assignment } from "@/app/(Kambaz)/Database/types";
 
 export default function AssignmentEditor() {
-  const { aid } = useParams();
+  const { aid, cid } = useParams();
   
   // Find the assignment by ID
   const assignment = assignments.find((a: Assignment) => a._id === aid);
@@ -187,8 +188,12 @@ export default function AssignmentEditor() {
         <hr />
 
         <div className="d-flex justify-content-end gap-2">
-          <Button variant="secondary">Cancel</Button>
-          <Button variant="danger">Save</Button>
+          <Link href={`/Courses/${cid}/Assignments`}>
+            <Button variant="secondary">Cancel</Button>
+          </Link>
+          <Link href={`/Courses/${cid}/Assignments`}>
+            <Button variant="danger">Save</Button>
+          </Link>
         </div>
       </Form>
     </div>
