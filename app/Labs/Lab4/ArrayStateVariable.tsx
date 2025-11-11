@@ -40,16 +40,7 @@ export default function ArrayStateVariable() {
       </ListGroup>
       <hr />
       
-      {/* Display todos from Redux state */}
-      <h3>Todos from Redux</h3>
-      <ListGroup>
-        {todos.map((todo: any) => (
-          <ListGroup.Item key={todo.id}>
-            {todo.title}
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
-      <hr />
+      
     </div>
   );
 }
