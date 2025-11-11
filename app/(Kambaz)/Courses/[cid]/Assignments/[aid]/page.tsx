@@ -1,22 +1,57 @@
 "use client";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/app/(Kambaz)/store";
+import { addAssignment, updateAssignment } from "../reducer";
 import { Form, Button } from "react-bootstrap";
-import { assignments } from "@/app/(Kambaz)/Database";
 import { Assignment } from "@/app/(Kambaz)/Database/types";
 
 export default function AssignmentEditor() {
   const { aid, cid } = useParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { assignments } = useSelector((state: RootState) => state.assignmentsReducer);
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
   
-  // Find the assignment by ID
-  const assignment = assignments.find((a: Assignment) => a._id === aid);
+  // Check if user is faculty
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
+  
+  // Find the assignment by ID if editing
+  const existingAssignment = aid !== "new" 
+    ? assignments.find((a: Assignment) => a._id === aid)
+    : null;
 
-  // Default values if assignment not found
-  const assignmentName = assignment?.title || "New Assignment";
-  const assignmentDescription = assignment?.description || "";
-  const assignmentPoints = assignment?.points || 100;
-  const assignmentDueDate = assignment?.dueDate || "2024-05-13T23:59";
-  const assignmentAvailableFrom = assignment?.availableFrom || "2024-05-06T00:00";
+  // Initialize form state
+  const [assignment, setAssignment] = useState<any>({
+    title: existingAssignment?.title || "",
+    description: existingAssignment?.description || "",
+    points: existingAssignment?.points || 100,
+    dueDate: existingAssignment?.dueDate || "2024-05-13T23:59",
+    availableFrom: existingAssignment?.availableFrom || "2024-05-06T00:00",
+  });
+
+  // Redirect students trying to create new assignments
+  useEffect(() => {
+    if (!isFaculty && aid === "new") {
+      router.push(`/Courses/${cid}/Assignments`);
+    }
+  }, [isFaculty, aid, cid, router]);
+
+  const handleSave = () => {
+    if (aid === "new") {
+      // Create new assignment
+      dispatch(addAssignment({ ...assignment, course: cid }));
+    } else {
+      // Update existing assignment
+      dispatch(updateAssignment({ ...assignment, _id: aid, course: cid }));
+    }
+    router.push(`/Courses/${cid}/Assignments`);
+  };
+
+  const handleCancel = () => {
+    router.push(`/Courses/${cid}/Assignments`);
+  };
 
   return (
     <div id="wd-assignments-editor" className="p-4">
@@ -26,7 +61,9 @@ export default function AssignmentEditor() {
           <Form.Control
             id="wd-name"
             type="text"
-            defaultValue={assignmentName}
+            value={assignment.title}
+            onChange={(e) => setAssignment({ ...assignment, title: e.target.value })}
+            readOnly={!isFaculty}
           />
         </Form.Group>
 
@@ -36,7 +73,9 @@ export default function AssignmentEditor() {
             as="textarea"
             id="wd-description"
             rows={10}
-            defaultValue={assignmentDescription}
+            value={assignment.description}
+            onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
+            readOnly={!isFaculty}
           />
         </Form.Group>
 
@@ -48,7 +87,9 @@ export default function AssignmentEditor() {
             <Form.Control
               id="wd-points"
               type="number"
-              defaultValue={assignmentPoints}
+              value={assignment.points}
+              onChange={(e) => setAssignment({ ...assignment, points: parseInt(e.target.value) })}
+              readOnly={!isFaculty}
             />
           </div>
         </Form.Group>
@@ -154,8 +195,10 @@ export default function AssignmentEditor() {
               <Form.Control
                 id="wd-due-date"
                 type="datetime-local"
-                defaultValue={assignmentDueDate}
+                value={assignment.dueDate}
+                onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
                 className="mb-3"
+                readOnly={!isFaculty}
               />
 
               <div className="row">
@@ -166,7 +209,9 @@ export default function AssignmentEditor() {
                   <Form.Control
                     id="wd-available-from"
                     type="datetime-local"
-                    defaultValue={assignmentAvailableFrom}
+                    value={assignment.availableFrom}
+                    onChange={(e) => setAssignment({ ...assignment, availableFrom: e.target.value })}
+                    readOnly={!isFaculty}
                   />
                 </div>
 
@@ -177,7 +222,9 @@ export default function AssignmentEditor() {
                   <Form.Control
                     id="wd-available-until"
                     type="datetime-local"
-                    defaultValue={assignmentDueDate}
+                    value={assignment.dueDate}
+                    onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
+                    readOnly={!isFaculty}
                   />
                 </div>
               </div>
@@ -187,14 +234,16 @@ export default function AssignmentEditor() {
 
         <hr />
 
-        <div className="d-flex justify-content-end gap-2">
-          <Link href={`/Courses/${cid}/Assignments`}>
-            <Button variant="secondary">Cancel</Button>
-          </Link>
-          <Link href={`/Courses/${cid}/Assignments`}>
-            <Button variant="danger">Save</Button>
-          </Link>
-        </div>
+        {isFaculty && (
+          <div className="d-flex justify-content-end gap-2">
+            <Button variant="secondary" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleSave}>
+              Save
+            </Button>
+          </div>
+        )}
       </Form>
     </div>
   );

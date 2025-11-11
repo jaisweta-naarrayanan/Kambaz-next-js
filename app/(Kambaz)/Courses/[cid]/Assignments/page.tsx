@@ -1,18 +1,33 @@
 "use client";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/app/(Kambaz)/store";
+import { deleteAssignment } from "./reducer";
 import { Button } from "react-bootstrap";
-import { FaPlus, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaCheckCircle, FaTrash } from "react-icons/fa";
 import { BsGripVertical, BsPlus } from "react-icons/bs";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { GoTriangleDown } from "react-icons/go";
 import { CiSearch } from "react-icons/ci";
 import { MdOutlineAssignment } from "react-icons/md";
-import { assignments } from "@/app/(Kambaz)/Database";
 import { Assignment } from "@/app/(Kambaz)/Database/types";
 
 export default function Assignments() {
   const { cid } = useParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { assignments } = useSelector((state: RootState) => state.assignmentsReducer);
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+
+  // Check if user is faculty
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
+
+  const handleDeleteAssignment = (assignmentId: string) => {
+    if (window.confirm("Are you sure you want to remove this assignment?")) {
+      dispatch(deleteAssignment(assignmentId));
+    }
+  };
   
   // Filter assignments for the current course
   const courseAssignments = assignments.filter(
@@ -31,14 +46,20 @@ export default function Assignments() {
             className="form-control ps-5"
           />
         </div>
-        <div>
-          <button id="wd-add-assignment-group" className="btn btn-secondary me-2">
-            <BsPlus className="fs-4" /> Group
-          </button>
-          <button id="wd-add-assignment" className="btn btn-danger">
-            <BsPlus className="fs-4" /> Assignment
-          </button>
-        </div>
+        {isFaculty && (
+          <div>
+            <button id="wd-add-assignment-group" className="btn btn-secondary me-2">
+              <BsPlus className="fs-4" /> Group
+            </button>
+            <button 
+              id="wd-add-assignment" 
+              className="btn btn-danger"
+              onClick={() => router.push(`/Courses/${cid}/Assignments/new`)}
+            >
+              <BsPlus className="fs-4" /> Assignment
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Assignments List */}
@@ -90,6 +111,13 @@ export default function Assignments() {
                 </div>
               </div>
               <div className="d-flex align-items-center">
+                {isFaculty && (
+                  <FaTrash 
+                    className="text-danger me-3 fs-5" 
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleDeleteAssignment(assignment._id)}
+                  />
+                )}
                 <FaCheckCircle className="text-success me-2 fs-5" />
                 <IoEllipsisVertical className="fs-4" />
               </div>
