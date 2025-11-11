@@ -1,4 +1,5 @@
- import { useState } from "react";
+"use client";
+import { useState } from "react";
 import { Button, ListGroup } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { RootState } from "./store";
