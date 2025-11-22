@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/app/(Kambaz)/store";
-import { deleteAssignment } from "./reducer";
+import * as client from "./client";
+import { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import { FaPlus, FaCheckCircle, FaTrash } from "react-icons/fa";
 import { BsGripVertical, BsPlus } from "react-icons/bs";
@@ -16,23 +17,33 @@ import { Assignment } from "@/app/(Kambaz)/Database/types";
 export default function Assignments() {
   const { cid } = useParams();
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { assignments } = useSelector((state: RootState) => state.assignmentsReducer);
+  const { assignments: reduxAssignments } = useSelector((state: RootState) => state.assignmentsReducer);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
 
   // Check if user is faculty
   const isFaculty = (currentUser as any)?.role === "FACULTY";
 
-  const handleDeleteAssignment = (assignmentId: string) => {
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      if (cid) {
+        const data = await client.getAssignmentsForCourse(cid as string);
+        setAssignments(data);
+      }
+    };
+    fetchAssignments();
+  }, [cid]);
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
     if (window.confirm("Are you sure you want to remove this assignment?")) {
-      dispatch(deleteAssignment(assignmentId));
+      await client.deleteAssignment(assignmentId);
+      setAssignments(assignments.filter((a) => a._id !== assignmentId));
     }
   };
   
   // Filter assignments for the current course
-  const courseAssignments = assignments.filter(
-    (assignment: Assignment) => assignment.course === cid
-  );
+  // assignments already filtered by course from API
+  const courseAssignments = assignments;
 
   return (
     <div id="wd-assignments">

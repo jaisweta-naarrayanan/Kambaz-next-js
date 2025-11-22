@@ -31,9 +31,17 @@ export interface Module {
 
 export interface User {
   _id: string;
-  name: string;
+  username: string;
+  password: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: "student" | "instructor" | "admin";
+  dob: string;
+  role: string;
+  loginId: string;
+  section: string;
+  lastActivity: string;
+  totalActivity: string;
 }
 
 
