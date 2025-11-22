@@ -1,242 +1,187 @@
-"use client";
+"use client"
+import { useState } from "react";
 import Link from "next/link";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Card from "react-bootstrap/Card";
-import Button from "react-bootstrap/Button";
+import { Row, Col, Card, CardImg, CardBody, CardTitle, CardText, Button, Form } from "react-bootstrap";
+import { useDispatch, useSelector } from "react-redux";
+import { addNewCourse, deleteCourse, updateCourse } from "../Courses/reducer";
+import { enrollCourse, unenrollCourse } from "../Database/enrollments/reducer";
+import { RootState } from "../store";
 
 export default function Dashboard() {
+  const { courses } = useSelector((state: RootState) => state.coursesReducer);
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+  const { enrollments } = useSelector((state: RootState) => state.enrollmentsReducer);
+  const dispatch = useDispatch();
+  
+  // State to toggle between showing all courses vs enrolled courses
+  const [showAllCourses, setShowAllCourses] = useState(false);
+  
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
+  
+  // Convert course into a state variable so we can change it
+  // and force a redraw of the UI
+  const [course, setCourse] = useState<any>({
+    _id: "0", 
+    name: "New Course", 
+    number: "New Number",
+    startDate: "2023-09-10", 
+    endDate: "2023-12-15",
+    department: "New Department",
+    credits: 3,
+    image: "/images/reactjs.jpg", 
+    description: "New Description"
+  });
+  
+  // Check if user is enrolled in a course
+  const isEnrolled = (courseId: string) => {
+    return enrollments.some(
+      (enrollment: any) =>
+        enrollment.user === (currentUser as any)?._id &&
+        enrollment.course === courseId
+    );
+  };
+
+  // Handle enroll action
+  const handleEnroll = (courseId: string) => {
+    dispatch(enrollCourse({ userId: (currentUser as any)?._id, courseId }));
+  };
+
+  // Handle unenroll action
+  const handleUnenroll = (courseId: string) => {
+    dispatch(unenrollCourse({ userId: (currentUser as any)?._id, courseId }));
+  };
+
+  // Filter courses based on showAllCourses state
+  const displayedCourses = showAllCourses
+    ? courses
+    : courses.filter((course) => isEnrolled(course._id));
+
   return (
-    <div id="wd-dashboard">
+    <div className="p-4" id="wd-dashboard">
       <h1 id="wd-dashboard-title">Dashboard</h1> <hr />
-      <h2 id="wd-dashboard-published">Published Courses (8)</h2> <hr />
+      {isFaculty && (
+        <>
+          <h5>New Course
+            <button 
+              className="btn btn-primary float-end"
+              id="wd-add-new-course-click"
+              onClick={() => dispatch(addNewCourse(course))}
+            >
+              Add
+            </button>
+            <button 
+              className="btn btn-warning float-end me-2"
+              id="wd-update-course-click"
+              onClick={() => dispatch(updateCourse(course))}
+            >
+              Update
+            </button>
+          </h5>
+          <br />
+          {/* Add input elements for each of fields in course state variable */}
+          <Form.Control 
+            value={course.name} 
+            className="mb-2"
+            onChange={(e) => setCourse({ ...course, name: e.target.value })}
+          />
+          <Form.Control 
+            as="textarea"
+            value={course.description} 
+            rows={3}
+            onChange={(e) => setCourse({ ...course, description: e.target.value })}
+          />
+          <hr />
+        </>
+      )}
+      <h2 id="wd-dashboard-published">
+        Published Courses ({displayedCourses.length})
+        <button
+          onClick={() => setShowAllCourses(!showAllCourses)}
+          className="btn btn-primary float-end"
+          id="wd-enrollments-button"
+        >
+          {showAllCourses ? "My Courses" : "All Courses"}
+        </button>
+      </h2>
+      <hr />
       <div id="wd-dashboard-courses">
-        <Row xs={1} md={5} className="g-4">
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1234" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/reactjs.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1234 React JS
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Full Stack software developer
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1235" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/webd.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1235 Web Development
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Full Stack software developer II
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1236" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/mongodb.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1236 Mongo DB
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Full Stack software developer III
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1237" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/sysdesign.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1237 System Design
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Full Stack software developer IV
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1238" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/cpp.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1238 C++ Programming
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Advanced object-oriented programming
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1239" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/python.jpeg" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1239 Python for Data Science
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Data analysis and machine learning with Python
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1240" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/java.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1240 Java Enterprise
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    Building scalable enterprise applications
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
-
-          <Col className="wd-dashboard-course" style={{ width: "300px" }}>
-            <Card>
-              <Link 
-                href="/Courses/1241" 
-                className="wd-dashboard-course-link text-decoration-none text-dark"
-              >
-                <Card.Img 
-                  variant="top" 
-                  src="/images/devops.png" 
-                  width="100%" 
-                  height={160}
-                />
-                <Card.Body>
-                  <Card.Title className="wd-dashboard-course-title text-nowrap overflow-hidden">
-                    CS1241 DevOps & Cloud
-                  </Card.Title>
-                  <Card.Text 
-                    className="wd-dashboard-course-description overflow-hidden" 
-                    style={{ height: "100px" }}
-                  >
-                    CI/CD, Docker, Kubernetes, and AWS
-                  </Card.Text>
-                  <Button variant="primary">Go</Button>
-                </Card.Body>
-              </Link>
-            </Card>
-          </Col>
+        <Row>
+          {displayedCourses.map((course) => (
+            <Col key={course._id} className="wd-dashboard-course mb-4" style={{ width: "300px" }}>
+              <Card className="h-100">
+                <Link href={`/Courses/${course._id}/Home`}
+                      className="wd-dashboard-course-link text-decoration-none text-dark" >
+                  <CardImg src={course.image || "/images/reactjs.jpg"} variant="top" width="100%" height={160} />
+                  <CardBody className="card-body">
+                    <CardTitle className="wd-dashboard-course-title text-nowrap overflow-hidden">
+                      {course.name} </CardTitle>
+                    <CardText className="wd-dashboard-course-description overflow-hidden" style={{ height: "100px" }}>
+                      {course.description} </CardText>
+                    
+                    {isEnrolled(course._id) && (
+                      <Button variant="primary"> Go </Button>
+                    )}
+                    
+                    {/* Show Enroll/Unenroll buttons */}
+                    {isEnrolled(course._id) ? (
+                      <Button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleUnenroll(course._id);
+                        }}
+                        variant="danger"
+                        className="float-end"
+                        id="wd-unenroll-course-click"
+                      >
+                        Unenroll
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleEnroll(course._id);
+                        }}
+                        variant="success"
+                        className="float-end"
+                        id="wd-enroll-course-click"
+                      >
+                        Enroll
+                      </Button>
+                    )}
+                    
+                    {/* Faculty-only buttons */}
+                    {isFaculty && (
+                      <>
+                        <Button 
+                          onClick={(event) => {
+                            event.preventDefault();
+                            dispatch(deleteCourse(course._id));
+                          }} 
+                          variant="danger" 
+                          className="float-end me-2"
+                          id="wd-delete-course-click"
+                        >
+                          Delete
+                        </Button>
+                        <Button 
+                          id="wd-edit-course-click"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setCourse(course);
+                          }}
+                          variant="warning" 
+                          className="me-2 float-end"
+                        >
+                          Edit
+                        </Button>
+                      </>
+                    )}
+                  </CardBody>
+                </Link>
+              </Card>
+            </Col>
+          ))}
         </Row>
       </div>
-    </div>
-  );
-}
+    </div>);}
+

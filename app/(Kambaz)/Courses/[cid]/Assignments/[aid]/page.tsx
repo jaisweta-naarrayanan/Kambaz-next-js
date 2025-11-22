@@ -1,7 +1,58 @@
 "use client";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/app/(Kambaz)/store";
+import { addAssignment, updateAssignment } from "../reducer";
 import { Form, Button } from "react-bootstrap";
+import { Assignment } from "@/app/(Kambaz)/Database/types";
 
 export default function AssignmentEditor() {
+  const { aid, cid } = useParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { assignments } = useSelector((state: RootState) => state.assignmentsReducer);
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+  
+  // Check if user is faculty
+  const isFaculty = (currentUser as any)?.role === "FACULTY";
+  
+  // Find the assignment by ID if editing
+  const existingAssignment = aid !== "new" 
+    ? assignments.find((a: Assignment) => a._id === aid)
+    : null;
+
+  // Initialize form state
+  const [assignment, setAssignment] = useState<any>({
+    title: existingAssignment?.title || "",
+    description: existingAssignment?.description || "",
+    points: existingAssignment?.points || 100,
+    dueDate: existingAssignment?.dueDate || "2024-05-13T23:59",
+    availableFrom: existingAssignment?.availableFrom || "2024-05-06T00:00",
+  });
+
+  // Redirect students trying to create new assignments
+  useEffect(() => {
+    if (!isFaculty && aid === "new") {
+      router.push(`/Courses/${cid}/Assignments`);
+    }
+  }, [isFaculty, aid, cid, router]);
+
+  const handleSave = () => {
+    if (aid === "new") {
+      // Create new assignment
+      dispatch(addAssignment({ ...assignment, course: cid }));
+    } else {
+      // Update existing assignment
+      dispatch(updateAssignment({ ...assignment, _id: aid, course: cid }));
+    }
+    router.push(`/Courses/${cid}/Assignments`);
+  };
+
+  const handleCancel = () => {
+    router.push(`/Courses/${cid}/Assignments`);
+  };
+
   return (
     <div id="wd-assignments-editor" className="p-4">
       <Form>
@@ -10,7 +61,9 @@ export default function AssignmentEditor() {
           <Form.Control
             id="wd-name"
             type="text"
-            defaultValue="A1"
+            value={assignment.title}
+            onChange={(e) => setAssignment({ ...assignment, title: e.target.value })}
+            readOnly={!isFaculty}
           />
         </Form.Group>
 
@@ -20,18 +73,9 @@ export default function AssignmentEditor() {
             as="textarea"
             id="wd-description"
             rows={10}
-            defaultValue={`The assignment is available online
-
-Submit a link to the landing page of your Web application running on Netlify.
-
-The landing page should include the following:
-
-- Your full name and section
-- Links to each of the lab assignments
-- Link to the Kanbas application
-- Links to all relevant source code repositories
-
-The Kanbas application should include a link to navigate back to the landing page.`}
+            value={assignment.description}
+            onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
+            readOnly={!isFaculty}
           />
         </Form.Group>
 
@@ -43,7 +87,9 @@ The Kanbas application should include a link to navigate back to the landing pag
             <Form.Control
               id="wd-points"
               type="number"
-              defaultValue={100}
+              value={assignment.points}
+              onChange={(e) => setAssignment({ ...assignment, points: parseInt(e.target.value) })}
+              readOnly={!isFaculty}
             />
           </div>
         </Form.Group>
@@ -149,8 +195,10 @@ The Kanbas application should include a link to navigate back to the landing pag
               <Form.Control
                 id="wd-due-date"
                 type="datetime-local"
-                defaultValue="2024-05-13T23:59"
+                value={assignment.dueDate}
+                onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
                 className="mb-3"
+                readOnly={!isFaculty}
               />
 
               <div className="row">
@@ -161,7 +209,9 @@ The Kanbas application should include a link to navigate back to the landing pag
                   <Form.Control
                     id="wd-available-from"
                     type="datetime-local"
-                    defaultValue="2024-05-06T00:00"
+                    value={assignment.availableFrom}
+                    onChange={(e) => setAssignment({ ...assignment, availableFrom: e.target.value })}
+                    readOnly={!isFaculty}
                   />
                 </div>
 
@@ -172,7 +222,9 @@ The Kanbas application should include a link to navigate back to the landing pag
                   <Form.Control
                     id="wd-available-until"
                     type="datetime-local"
-                    defaultValue="2024-05-20T23:59"
+                    value={assignment.dueDate}
+                    onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
+                    readOnly={!isFaculty}
                   />
                 </div>
               </div>
@@ -182,10 +234,16 @@ The Kanbas application should include a link to navigate back to the landing pag
 
         <hr />
 
-        <div className="d-flex justify-content-end gap-2">
-          <Button variant="secondary">Cancel</Button>
-          <Button variant="danger">Save</Button>
-        </div>
+        {isFaculty && (
+          <div className="d-flex justify-content-end gap-2">
+            <Button variant="secondary" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleSave}>
+              Save
+            </Button>
+          </div>
+        )}
       </Form>
     </div>
   );
