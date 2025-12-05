@@ -4,7 +4,8 @@ import Link from "next/link";
 import * as client from "../Courses/client";
 import { Row, Col, Card, CardImg, CardBody, CardTitle, CardText, Button, Form } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import { addNewCourse, deleteCourse, updateCourse, setCourses} from "../Courses/reducer";
+import { addNewCourse, deleteCourse, updateCourse, setCourses } from "../Courses/reducer";
+import { setEnrollments as setEnrollmentsInStore } from "../Database/enrollments/reducer";
 import { RootState } from "../store";
 import * as enrollmentsClient from "../Database/enrollments/client";
 import { Enrollment } from "../Database/enrollments/types";
@@ -16,14 +17,14 @@ export default function Dashboard() {
   // Local state for enrollments
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const dispatch = useDispatch();
-  
+
   // State to toggle between showing all courses vs enrolled courses
   const [showAllCourses, setShowAllCourses] = useState(false);
-  
+
   const isFaculty = (currentUser && typeof currentUser === "object" && "role" in currentUser)
     ? (currentUser as { role?: string }).role === "FACULTY"
     : false;
-  
+
   // Convert course into a state variable so we can change it
   // and force a redraw of the UI
   const [course, setCourse] = useState<Course>({
@@ -37,7 +38,7 @@ export default function Dashboard() {
     image: "/images/reactjs.jpg",
     description: "New Description"
   });
-  
+
   // Fetch courses and enrollments when user or showAllCourses changes
   useEffect(() => {
     const fetchCourses = async () => {
@@ -59,6 +60,7 @@ export default function Dashboard() {
         try {
           const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
           setEnrollments(data);
+          dispatch(setEnrollmentsInStore(data));
         } catch {
           setEnrollments([]);
         }
@@ -81,7 +83,7 @@ export default function Dashboard() {
 
   const onAddNewCourse = async () => {
     const newCourse = await client.createCourse(course);
-    dispatch(setCourses([ ...courses, newCourse ]));
+    dispatch(setCourses([...courses, newCourse]));
   };
   const onDeleteCourse = async (courseId: string) => {
     await client.deleteCourse(courseId);
@@ -90,8 +92,8 @@ export default function Dashboard() {
   const onUpdateCourse = async () => {
     await client.updateCourse(course);
     dispatch(setCourses(courses.map((c) => {
-        if (c._id === course._id) { return course; }
-        else { return c; }
+      if (c._id === course._id) { return course; }
+      else { return c; }
     })));
   };
 
@@ -104,6 +106,7 @@ export default function Dashboard() {
       // Refresh enrollments
       const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
       setEnrollments(data);
+      dispatch(setEnrollmentsInStore(data));
     } catch {
       // Optionally show error
     }
@@ -117,6 +120,7 @@ export default function Dashboard() {
       // Refresh enrollments
       const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
       setEnrollments(data);
+      dispatch(setEnrollmentsInStore(data));
     } catch {
       // Optionally show error
     }
@@ -133,14 +137,14 @@ export default function Dashboard() {
       {isFaculty && (
         <>
           <h5>New Course
-            <button 
+            <button
               className="btn btn-primary float-end"
               id="wd-add-new-course-click"
               onClick={onAddNewCourse}
             >
               Add
             </button>
-            <button 
+            <button
               className="btn btn-secondary float-end me-2"
               id="wd-update-course-click"
               onClick={onUpdateCourse}
@@ -150,14 +154,14 @@ export default function Dashboard() {
           </h5>
           <br />
           {/* Add input elements for each of fields in course state variable */}
-          <Form.Control 
-            value={course.name} 
+          <Form.Control
+            value={course.name}
             className="mb-2"
             onChange={(e) => setCourse({ ...course, name: e.target.value })}
           />
-          <Form.Control 
+          <Form.Control
             as="textarea"
-            value={course.description} 
+            value={course.description}
             rows={3}
             onChange={(e) => setCourse({ ...course, description: e.target.value })}
           />
@@ -181,18 +185,18 @@ export default function Dashboard() {
             <Col key={course._id} className="wd-dashboard-course mb-4" style={{ width: "300px" }}>
               <Card className="h-100">
                 <Link href={`/Courses/${course._id}/Home`}
-                      className="wd-dashboard-course-link text-decoration-none text-dark" >
+                  className="wd-dashboard-course-link text-decoration-none text-dark" >
                   <CardImg src={course.image || "/images/reactjs.jpg"} variant="top" width="100%" height={160} />
                   <CardBody className="card-body">
                     <CardTitle className="wd-dashboard-course-title text-nowrap overflow-hidden">
                       {course.name} </CardTitle>
                     <CardText className="wd-dashboard-course-description overflow-hidden" style={{ height: "100px" }}>
                       {course.description} </CardText>
-                    
+
                     {isEnrolled(course._id) && (
                       <Button variant="primary"> Go </Button>
                     )}
-                    
+
                     {/* Show Enroll/Unenroll buttons */}
                     {isEnrolled(course._id) ? (
                       <Button
@@ -219,28 +223,28 @@ export default function Dashboard() {
                         Enroll
                       </Button>
                     )}
-                    
+
                     {/* Faculty-only buttons */}
                     {isFaculty && (
                       <>
-                        <Button 
+                        <Button
                           onClick={(event) => {
                             event.preventDefault();
                             onDeleteCourse(course._id);
-                          }} 
-                          variant="danger" 
+                          }}
+                          variant="danger"
                           className="float-end me-2"
                           id="wd-delete-course-click"
                         >
                           Delete
                         </Button>
-                        <Button 
+                        <Button
                           id="wd-edit-course-click"
                           onClick={(event) => {
                             event.preventDefault();
                             setCourse(course);
                           }}
-                          variant="warning" 
+                          variant="warning"
                           className="me-2 float-end"
                         >
                           Edit
@@ -254,5 +258,6 @@ export default function Dashboard() {
           ))}
         </Row>
       </div>
-    </div>);}
+    </div>);
+}
 

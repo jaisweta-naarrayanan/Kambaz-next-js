@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
+const API_BASE = process.env.NEXT_PUBLIC_HTTP_SERVER + "/api" || "http://localhost:4000/api";
 
 export const getAllUsers = async () => {
   const response = await axios.get(`${API_BASE}/users`, { withCredentials: true });
@@ -21,12 +21,12 @@ export const updateUser = async (userId: string, user: any) => {
   return response.data;
 };
 
-  export const deleteUser = async (userId: string) => {
-    const response = await axios.delete(`${API_BASE}/users/${userId}`, { withCredentials: true });
-    return response.data;
-  };
+export const deleteUser = async (userId: string) => {
+  const response = await axios.delete(`${API_BASE}/users/${userId}`, { withCredentials: true });
+  return response.data;
+};
 
-  export const getUsersForCourse = async (courseId: string) => {
+export const getUsersForCourse = async (courseId: string) => {
   const response = await axios.get(`${API_BASE}/courses/${courseId}/users`, { withCredentials: true });
   return response.data;
 };
