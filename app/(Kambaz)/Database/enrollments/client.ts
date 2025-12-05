@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
+const API_BASE = process.env.NEXT_PUBLIC_HTTP_SERVER + "/api" || "http://localhost:4000/api";
 
 export const enrollUserInCourse = async (userId: string, courseId: string) => {
   const response = await axios.post(`${API_BASE}/enrollments`, { userId, courseId }, { withCredentials: true });
