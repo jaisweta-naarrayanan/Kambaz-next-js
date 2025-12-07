@@ -17,21 +17,25 @@ export default function Modules() {
   const { modules } = useSelector((state: RootState) => state.modulesReducer);
   const dispatch = useDispatch();
 
-    const onCreateModuleForCourse = async () => {
-      const courseId = Array.isArray(cid) ? cid[0] : cid;
-      if (!courseId) return;
-      const newModule = { name: moduleName, course: courseId };
-      const createdModule = await client.createModuleForCourse(courseId, newModule);
-      dispatch(setModules([...modules, createdModule]));
-    };
+  const onCreateModuleForCourse = async () => {
+    const courseId = Array.isArray(cid) ? cid[0] : cid;
+    if (!courseId) return;
+    const newModule = { name: moduleName, course: courseId };
+    const createdModule = await client.createModuleForCourse(courseId, newModule);
+    dispatch(setModules([...modules, createdModule]));
+  };
 
   const onRemoveModule = async (moduleId: string) => {
-    await client.deleteModule(moduleId);
+    const courseId = Array.isArray(cid) ? cid[0] : cid;
+    if (!courseId) return;
+    await client.deleteModule(courseId, moduleId);
     dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
   };
   const onUpdateModule = async (module: any) => {
-    await client.updateModule(module);
-    const newModules = modules.map((m: any) => m._id === module._id ? module : m );
+    const courseId = Array.isArray(cid) ? cid[0] : cid;
+    if (!courseId) return;
+    await client.updateModule(courseId, module);
+    const newModules = modules.map((m: any) => m._id === module._id ? module : m);
     dispatch(setModules(newModules));
   };
 
@@ -71,7 +75,7 @@ export default function Modules() {
                     }
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                         onUpdateModule({ ...module, editing: false });
+                        onUpdateModule({ ...module, editing: false });
                       }
                     }}
                     defaultValue={module.name}

@@ -14,8 +14,8 @@ import { Course } from "../Database/types";
 export default function Dashboard() {
   const { courses } = useSelector((state: RootState) => state.coursesReducer);
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
-  // Local state for enrollments
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  // Track enrolled course IDs instead of enrollment objects
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const dispatch = useDispatch();
 
   // State to toggle between showing all courses vs enrolled courses
@@ -58,14 +58,17 @@ export default function Dashboard() {
     const fetchEnrollments = async () => {
       if (currentUser && typeof currentUser === "object" && "_id" in currentUser) {
         try {
-          const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
-          setEnrollments(data);
-          dispatch(setEnrollmentsInStore(data));
+          const enrolledCourses = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
+          // Extract course IDs from the returned courses
+          const courseIds = enrolledCourses.map((course: any) => course._id);
+          setEnrolledCourseIds(courseIds);
+          // Populate Redux store with enrolled courses for course layout check
+          dispatch(setEnrollmentsInStore(enrolledCourses));
         } catch {
-          setEnrollments([]);
+          setEnrolledCourseIds([]);
         }
       } else {
-        setEnrollments([]);
+        setEnrolledCourseIds([]);
       }
     };
     fetchEnrollments();
@@ -73,12 +76,7 @@ export default function Dashboard() {
 
   // Check if user is enrolled in a course
   const isEnrolled = (courseId: string) => {
-    if (!currentUser || typeof currentUser !== "object" || !("_id" in currentUser)) return false;
-    return enrollments.some(
-      (enrollment: Enrollment) =>
-        enrollment.user === (currentUser as { _id: string })._id &&
-        enrollment.course === courseId
-    );
+    return enrolledCourseIds.includes(courseId);
   };
 
   const onAddNewCourse = async () => {
@@ -103,10 +101,12 @@ export default function Dashboard() {
     if (!currentUser || typeof currentUser !== "object" || !("_id" in currentUser)) return;
     try {
       await enrollmentsClient.enrollUserInCourse((currentUser as { _id: string })._id, courseId);
-      // Refresh enrollments
-      const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
-      setEnrollments(data);
-      dispatch(setEnrollmentsInStore(data));
+      // Refresh enrolled course IDs
+      const enrolledCourses = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
+      const courseIds = enrolledCourses.map((course: any) => course._id);
+      setEnrolledCourseIds(courseIds);
+      // Update Redux store
+      dispatch(setEnrollmentsInStore(enrolledCourses));
     } catch {
       // Optionally show error
     }
@@ -117,10 +117,12 @@ export default function Dashboard() {
     if (!currentUser || typeof currentUser !== "object" || !("_id" in currentUser)) return;
     try {
       await enrollmentsClient.unenrollUserFromCourse((currentUser as { _id: string })._id, courseId);
-      // Refresh enrollments
-      const data = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
-      setEnrollments(data);
-      dispatch(setEnrollmentsInStore(data));
+      // Refresh enrolled course IDs
+      const enrolledCourses = await enrollmentsClient.getEnrollmentsForUser((currentUser as { _id: string })._id);
+      const courseIds = enrolledCourses.map((course: any) => course._id);
+      setEnrolledCourseIds(courseIds);
+      // Update Redux store
+      dispatch(setEnrollmentsInStore(enrolledCourses));
     } catch {
       // Optionally show error
     }

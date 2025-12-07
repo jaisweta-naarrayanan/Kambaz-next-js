@@ -8,37 +8,41 @@ import * as client from "../../../Account/client";
 
 export default function PeopleDetails({ uid, onClose }: { uid: string | null; onClose: () => void; }) {
   const [user, setUser] = useState<any>({});
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [editing, setEditing] = useState(false);
-  
+
   const deleteUser = async (uid: string) => {
     await client.deleteUser(uid);
     onClose();
   };
-  
+
   const saveUser = async () => {
-    const [firstName, lastName] = name.split(" ");
     const updatedUser = { ...user, firstName, lastName, email, role };
     await client.updateUser(updatedUser);
     setUser(updatedUser);
     setEditing(false);
     onClose();
   };
-  
+
   const fetchUser = async () => {
     if (!uid) return;
     const user = await client.findUserById(uid);
     setUser(user);
+    setFirstName(user.firstName || "");
+    setLastName(user.lastName || "");
+    setEmail(user.email || "");
+    setRole(user.role || "");
   };
-  
+
   useEffect(() => {
     if (uid) fetchUser();
   }, [uid]);
-  
+
   if (!uid) return null;
-  
+
   return (
     <div className="wd-people-details position-fixed top-0 end-0 bottom-0 bg-white p-4 shadow w-25">
       <button onClick={onClose} className="btn position-fixed end-0 top-0 wd-close-details">
@@ -51,26 +55,39 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
       <div className="text-danger fs-4">
         {!editing && (
           <FaPencil onClick={() => setEditing(true)}
-              className="float-end fs-5 mt-2 wd-edit" />
+            className="float-end fs-5 mt-2 wd-edit" />
         )}
         {editing && (
           <FaCheck onClick={() => saveUser()}
-              className="float-end fs-5 mt-2 me-2 wd-save" />
+            className="float-end fs-5 mt-2 me-2 wd-save" />
         )}
         {!editing && (
           <div className="wd-name"
-               onClick={() => setEditing(true)}>
+            onClick={() => setEditing(true)}>
             {user.firstName} {user.lastName}
           </div>
         )}
         {user && editing && (
-          <FormControl className="w-50 wd-edit-name"
-            defaultValue={`${user.firstName} ${user.lastName}`}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { saveUser(); }
-            }}
-          />
+          <div>
+            <FormControl
+              className="mb-2 wd-edit-firstname"
+              placeholder="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { saveUser(); }
+              }}
+            />
+            <FormControl
+              className="wd-edit-lastname"
+              placeholder="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { saveUser(); }
+              }}
+            />
+          </div>
         )}
       </div>
       <b>Email:</b>{" "}
@@ -79,7 +96,7 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
         <FormControl
           type="email"
           className="wd-edit-email"
-          defaultValue={user.email}
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
       )}
@@ -89,7 +106,7 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
       {editing && (
         <select
           className="form-select wd-edit-role"
-          defaultValue={user.role}
+          value={role}
           onChange={(e) => setRole(e.target.value)}
         >
           <option value="STUDENT">Student</option>

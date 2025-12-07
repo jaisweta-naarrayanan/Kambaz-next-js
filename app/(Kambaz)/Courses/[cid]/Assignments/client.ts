@@ -7,22 +7,28 @@ export const getAssignmentsForCourse = async (courseId: string) => {
   return response.data;
 };
 
-export const getAllAssignments = async () => {
-  const response = await axios.get(`${API_BASE}/assignments`, { withCredentials: true });
+export const createAssignment = async (courseId: string, assignment: any) => {
+  const response = await axios.post(
+    `${API_BASE}/courses/${courseId}/assignments`,
+    assignment,
+    { withCredentials: true }
+  );
   return response.data;
 };
 
-export const createAssignment = async (assignment: any) => {
-  const response = await axios.post(`${API_BASE}/assignments`, assignment, { withCredentials: true });
+export const updateAssignment = async (courseId: string, assignment: any) => {
+  const response = await axios.put(
+    `${API_BASE}/courses/${courseId}/assignments/${assignment._id}`,
+    assignment,
+    { withCredentials: true }
+  );
   return response.data;
 };
 
-export const updateAssignment = async (assignmentId: string, assignment: any) => {
-  const response = await axios.put(`${API_BASE}/assignments/${assignmentId}`, assignment, { withCredentials: true });
-  return response.data;
-};
-
-export const deleteAssignment = async (assignmentId: string) => {
-  const response = await axios.delete(`${API_BASE}/assignments/${assignmentId}`, { withCredentials: true });
+export const deleteAssignment = async (courseId: string, assignmentId: string) => {
+  const response = await axios.delete(
+    `${API_BASE}/courses/${courseId}/assignments/${assignmentId}`,
+    { withCredentials: true }
+  );
   return response.data;
 };

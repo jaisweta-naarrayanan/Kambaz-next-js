@@ -14,12 +14,12 @@ export default function AssignmentEditor() {
   const dispatch = useDispatch();
   const { assignments } = useSelector((state: RootState) => state.assignmentsReducer);
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
-  
+
   // Check if user is faculty
   const isFaculty = (currentUser as any)?.role === "FACULTY";
-  
+
   // Find the assignment by ID if editing
-  const existingAssignment = aid !== "new" 
+  const existingAssignment = aid !== "new"
     ? assignments.find((a: Assignment) => a._id === aid)
     : null;
 
@@ -41,9 +41,9 @@ export default function AssignmentEditor() {
 
   const handleSave = async () => {
     if (aid === "new") {
-      await client.createAssignment({ ...assignment, course: cid });
+      await client.createAssignment(cid as string, { ...assignment, course: cid });
     } else {
-      await client.updateAssignment(aid as string, { ...assignment, _id: aid, course: cid });
+      await client.updateAssignment(cid as string, { ...assignment, _id: aid, course: cid });
     }
     // Fetch updated assignments and update Redux
     const updatedAssignments = await client.getAssignmentsForCourse(cid as string);
@@ -136,14 +136,14 @@ export default function AssignmentEditor() {
               </Form.Select>
 
               <Form.Label className="fw-bold mb-2">Online Entry Options</Form.Label>
-              
+
               <Form.Check
                 type="checkbox"
                 id="wd-text-entry"
                 label="Text Entry"
                 className="mb-2"
               />
-              
+
               <Form.Check
                 type="checkbox"
                 id="wd-website-url"
@@ -151,21 +151,21 @@ export default function AssignmentEditor() {
                 defaultChecked
                 className="mb-2"
               />
-              
+
               <Form.Check
                 type="checkbox"
                 id="wd-media-recordings"
                 label="Media Recordings"
                 className="mb-2"
               />
-              
+
               <Form.Check
                 type="checkbox"
                 id="wd-student-annotation"
                 label="Student Annotation"
                 className="mb-2"
               />
-              
+
               <Form.Check
                 type="checkbox"
                 id="wd-file-upload"

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/app/(Kambaz)/store";
+import { setAssignments } from "./reducer";
 import * as client from "./client";
 import { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
@@ -17,8 +18,8 @@ import { Assignment } from "@/app/(Kambaz)/Database/types";
 export default function Assignments() {
   const { cid } = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
   const { assignments: reduxAssignments } = useSelector((state: RootState) => state.assignmentsReducer);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
 
   // Check if user is faculty
@@ -28,26 +29,29 @@ export default function Assignments() {
     const fetchAssignments = async () => {
       if (cid) {
         const data = await client.getAssignmentsForCourse(cid as string);
-        setAssignments(data);
+        dispatch(setAssignments(data)); // Update Redux state
       }
     };
     fetchAssignments();
-  }, [cid]);
+  }, [cid, dispatch]); // Add dispatch to dependency array
 
-  const handleDeleteAssignment = async (assignmentId: string) => {
-    if (window.confirm("Are you sure you want to remove this assignment?")) {
-      await client.deleteAssignment(assignmentId);
-      setAssignments(assignments.filter((a) => a._id !== assignmentId));
+  // Handle assignment deletion
+  const handleDelete = async (assignmentId: string) => {
+    if (window.confirm("Are you sure you want to delete this assignment?")) {
+      await client.deleteAssignment(cid as string, assignmentId);
+      const updatedAssignments = await client.getAssignmentsForCourse(cid as string);
+      dispatch(setAssignments(updatedAssignments));
     }
   };
-  
+
   // Filter assignments for the current course
-  // assignments already filtered by course from API
-  const courseAssignments = assignments;
+  const courseAssignments = reduxAssignments.filter(
+    (assignment: Assignment) => assignment.course === cid
+  );
 
   return (
     <div id="wd-assignments">
-    {/* Search and Buttons Row */}
+      {/* Search and Buttons Row */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="position-relative" style={{ width: "300px" }}>
           <CiSearch className="position-absolute me-3" style={{ left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "20px" }} />
@@ -62,8 +66,8 @@ export default function Assignments() {
             <button id="wd-add-assignment-group" className="btn btn-secondary me-2">
               <BsPlus className="fs-4" /> Group
             </button>
-            <button 
-              id="wd-add-assignment" 
+            <button
+              id="wd-add-assignment"
               className="btn btn-danger"
               onClick={() => router.push(`/Courses/${cid}/Assignments/new`)}
             >
@@ -94,7 +98,7 @@ export default function Assignments() {
         </li>
 
         {/* Assignment 1 */}
-                {/* Assignment Items */}
+        {/* Assignment Items */}
         {courseAssignments.map((assignment: Assignment) => (
           <li key={assignment._id} className="wd-assignment-list-item wd-assignment list-group-item p-3 ps-1">
             <div className="d-flex align-items-start">
@@ -123,10 +127,10 @@ export default function Assignments() {
               </div>
               <div className="d-flex align-items-center">
                 {isFaculty && (
-                  <FaTrash 
-                    className="text-danger me-3 fs-5" 
+                  <FaTrash
+                    className="text-danger me-3 fs-5"
                     style={{ cursor: "pointer" }}
-                    onClick={() => handleDeleteAssignment(assignment._id)}
+                    onClick={() => handleDelete(assignment._id)}
                   />
                 )}
                 <FaCheckCircle className="text-success me-2 fs-5" />
