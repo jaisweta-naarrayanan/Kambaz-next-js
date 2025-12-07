@@ -22,6 +22,7 @@ export default function QuizTaking() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,7 +41,8 @@ export default function QuizTaking() {
 
   useEffect(() => {
     if (quizStarted && quiz?.timeLimit && timeRemaining === null) {
-      setTimeRemaining(quiz.timeLimit * 60); // Convert to seconds
+      setTimeRemaining(quiz.timeLimit * 60);
+      setStartTime(new Date());
     }
   }, [quizStarted, quiz, timeRemaining]);
 
@@ -146,8 +148,8 @@ export default function QuizTaking() {
   if (!quizStarted) {
     return (
       <div className="p-4">
-        <h3>{quiz.title}</h3>
-        <div className="border rounded p-4 mb-4">
+        <h3 className="mb-3">{quiz.title}</h3>
+        <div className="border rounded p-4 mb-4 bg-light">
           {quiz.description && <div className="mb-3" dangerouslySetInnerHTML={{ __html: quiz.description }} />}
           <div className="mb-2">
             <strong>Quiz Type:</strong> {quiz.quizType}
@@ -202,14 +204,36 @@ export default function QuizTaking() {
 
   return (
     <div id="wd-quiz-taking" className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>{quiz.title}</h3>
+      {/* Quiz Title */}
+      <h2 className="mb-3">{quiz.title}</h2>
+
+      {/* Started Info and Timer */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        {startTime && (
+          <p className="text-muted mb-0">
+            Started: {startTime.toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true
+            })}
+          </p>
+        )}
         {timeRemaining !== null && (
           <div className={`badge ${timeRemaining < 60 ? "bg-danger" : "bg-primary"} fs-5`}>
             Time Remaining: {formatTime(timeRemaining)}
           </div>
         )}
       </div>
+
+      {/* Quiz Instructions */}
+      {quiz.description && (
+        <>
+          <h4 className="mb-3 pb-2 border-bottom">Quiz Instructions</h4>
+          <div className="mb-4" dangerouslySetInnerHTML={{ __html: quiz.description }} />
+        </>
+      )}
 
       {quiz.oneQuestionAtATime ? (
         // One question at a time mode
@@ -221,7 +245,7 @@ export default function QuizTaking() {
           </div>
           {renderQuestion(questions[currentQuestionIndex])}
 
-          <div className="d-flex justify-content-between mt-4">
+          <div className="d-flex justify-content-between mt-4 border-top pt-3">
             <Button
               variant="secondary"
               onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
@@ -251,13 +275,19 @@ export default function QuizTaking() {
             ))}
           </Form>
 
-          <div className="d-flex justify-content-end gap-2 mt-4">
-            <Button variant="secondary" onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleSubmit}>
-              Submit Quiz
-            </Button>
+          <div className="border-top pt-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <p className="text-muted mb-0">
+                Quiz saved at {new Date().toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true
+                })}
+              </p>
+              <Button variant="danger" onClick={handleSubmit}>
+                Submit Quiz
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -268,14 +298,17 @@ export default function QuizTaking() {
     const questionNumber = index !== undefined ? index + 1 : currentQuestionIndex + 1;
 
     return (
-      <div className="border rounded p-4 mb-3">
+      <div className="mb-4 p-4 border rounded bg-light">
+        {/* Question Header */}
         <div className="d-flex justify-content-between align-items-start mb-3">
-          <h5>Question {questionNumber}</h5>
+          <h5 className="mb-0">Question {questionNumber}</h5>
           <span className="badge bg-secondary">{question.points} pts</span>
         </div>
 
+        {/* Question Text */}
         <div className="mb-3" dangerouslySetInnerHTML={{ __html: question.question || question.title }} />
 
+        {/* Question Type: Multiple Choice */}
         {question.type === "Multiple Choice" && question.choices && (
           <div>
             {question.choices.map((choice, choiceIndex) => (
@@ -292,6 +325,7 @@ export default function QuizTaking() {
           </div>
         )}
 
+        {/* Question Type: True/False */}
         {question.type === "True/False" && (
           <div>
             <Form.Check
@@ -313,6 +347,7 @@ export default function QuizTaking() {
           </div>
         )}
 
+        {/* Question Type: Fill in the Blank */}
         {question.type === "Fill in the Blank" && (
           <Form.Control
             type="text"

@@ -4,14 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/app/(Kambaz)/store";
 import { setQuizzes } from "./reducer";
+import { setAttempts } from "./Attempts/reducer";
 import * as client from "./client";
+import * as attemptClient from "./Attempts/client";
 import { useEffect, useState } from "react";
 import { Button, Dropdown } from "react-bootstrap";
 import { FaPlus, FaCheckCircle } from "react-icons/fa";
-import { BsGripVertical, BsPlus } from "react-icons/bs";
+import { BsGripVertical, BsPlus, BsSearch } from "react-icons/bs";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { GoTriangleDown } from "react-icons/go";
-import { CiSearch } from "react-icons/ci";
 import { GiNotebook } from "react-icons/gi";
 import { Quiz } from "@/app/(Kambaz)/Database/types";
 import { getQuizAvailability, formatDateForDisplay } from "./utils";
@@ -21,9 +22,11 @@ export default function Quizzes() {
   const router = useRouter();
   const dispatch = useDispatch();
   const { quizzes: reduxQuizzes } = useSelector((state: RootState) => state.quizzesReducer);
+  const { attempts: reduxAttempts } = useSelector((state: RootState) => state.quizAttemptsReducer);
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
 
-  // Check if user is faculty
+  const [searchTerm, setSearchTerm] = useState("");
+
   const isFaculty = (currentUser as any)?.role === "FACULTY";
 
   useEffect(() => {
@@ -36,7 +39,26 @@ export default function Quizzes() {
     fetchQuizzes();
   }, [cid, dispatch]);
 
-  // Handle quiz deletion
+  useEffect(() => {
+    const fetchAllAttempts = async () => {
+      if (!isFaculty && cid) {
+        const courseQuizzes = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
+        const allAttempts: any = [];
+
+        for (const quiz of courseQuizzes) {
+          try {
+            const attempts = await attemptClient.getAttemptsForStudent(quiz._id);
+            allAttempts.push(...attempts);
+          } catch (error) {
+            // Quiz may not have attempts yet
+          }
+        }
+        dispatch(setAttempts(allAttempts));
+      }
+    };
+    fetchAllAttempts();
+  }, [isFaculty, cid, reduxQuizzes, dispatch]);
+
   const handleDelete = async (quizId: string) => {
     if (window.confirm("Are you sure you want to delete this quiz?")) {
       await client.deleteQuiz(cid as string, quizId);
@@ -45,14 +67,12 @@ export default function Quizzes() {
     }
   };
 
-  // Handle publish/unpublish toggle
   const handleTogglePublish = async (quiz: Quiz) => {
     await client.publishQuiz(cid as string, quiz._id, !quiz.published);
     const updatedQuizzes = await client.getQuizzesForCourse(cid as string);
     dispatch(setQuizzes(updatedQuizzes));
   };
 
-  // Handle create new quiz
   const handleAddQuiz = async () => {
     const newQuiz = {
       title: "Unnamed Quiz",
@@ -79,68 +99,77 @@ export default function Quizzes() {
     router.push(`/Courses/${cid}/Quizzes/${createdQuiz._id}/edit`);
   };
 
-  // Filter quizzes for the current course
-  const courseQuizzes = reduxQuizzes.filter(
-    (quiz: Quiz) => quiz.course === cid
+  const courseQuizzes = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
+  const visibleQuizzes = isFaculty ? courseQuizzes : courseQuizzes.filter((quiz: Quiz) => quiz.published);
+  const filteredQuizzes = visibleQuizzes.filter((quiz: Quiz) =>
+    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // For students, only show published quizzes
-  const visibleQuizzes = isFaculty
-    ? courseQuizzes
-    : courseQuizzes.filter((quiz: Quiz) => quiz.published);
+  const getStudentScore = (quizId: string) => {
+    if (isFaculty || reduxAttempts.length === 0) return null;
+    const quizAttempts = reduxAttempts.filter((a: any) => a.quiz === quizId);
+    if (quizAttempts.length === 0) return null;
+    return quizAttempts[0];
+  };
 
   return (
-    <div id="wd-quizzes">
+    <div id="wd-quizzes" className="p-3">
       {/* Search and Buttons Row */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div className="position-relative" style={{ width: "300px" }}>
-          <CiSearch
-            className="position-absolute me-3"
-            style={{ left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "20px" }}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="position-relative" style={{ width: "250px" }}>
+          <BsSearch
+            className="position-absolute"
+            style={{ left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "#6c757d" }}
           />
           <input
             placeholder="Search for Quiz"
             id="wd-search-quiz"
-            className="form-control ps-5"
+            className="form-control form-control-sm ps-5"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ fontSize: "14px" }}
           />
         </div>
         {isFaculty && (
           <div>
             <button
               id="wd-add-quiz"
-              className="btn btn-danger"
+              className="btn btn-danger btn-sm"
               onClick={handleAddQuiz}
+              style={{ fontSize: "14px" }}
             >
-              <BsPlus className="fs-4" /> Quiz
+              <BsPlus className="fs-5" style={{ marginBottom: "2px" }} /> Quiz
             </button>
           </div>
         )}
       </div>
 
       {/* Quizzes List */}
-      {visibleQuizzes.length === 0 ? (
+      {filteredQuizzes.length === 0 ? (
         <div className="text-center py-5">
-          <p className="text-muted">
-            {isFaculty
-              ? 'No quizzes yet. Click "+ Quiz" to create one.'
-              : "No quizzes available yet."}
+          <p className="text-muted" style={{ fontSize: "14px" }}>
+            {searchTerm
+              ? `No quizzes found matching "${searchTerm}"`
+              : isFaculty
+                ? 'No quizzes yet. Click "+ Quiz" to create one.'
+                : "No quizzes available yet."}
           </p>
         </div>
       ) : (
         <ul id="wd-quiz-list" className="list-group rounded-0">
           {/* Quiz Header */}
-          <li className="wd-quiz-list-item list-group-item p-3 ps-1 fs-5 border-gray">
+          <li className="wd-quiz-list-item list-group-item p-3 ps-2 border-gray" style={{ backgroundColor: "#f5f5f5" }}>
             <div className="d-flex align-items-center">
-              <BsGripVertical className="me-2 fs-3" />
-              <GoTriangleDown className="me-2" />
-              <strong id="wd-quizzes-title">QUIZZES</strong>
+              <BsGripVertical className="me-2" style={{ fontSize: "20px", color: "#6c757d" }} />
+              <GoTriangleDown className="me-2" style={{ fontSize: "16px" }} />
+              <strong id="wd-quizzes-title" style={{ fontSize: "16px" }}>Assignment Quizzes</strong>
               {isFaculty && (
                 <div className="ms-auto">
-                  <Button variant="outline-secondary" size="sm" className="border-0 me-1">
-                    <FaPlus />
+                  <Button variant="link" size="sm" className="text-dark p-0 border-0 me-2">
+                    <BsPlus style={{ fontSize: "20px" }} />
                   </Button>
-                  <Button variant="outline-secondary" size="sm" className="border-0">
-                    <IoEllipsisVertical />
+                  <Button variant="link" size="sm" className="text-dark p-0 border-0">
+                    <IoEllipsisVertical style={{ fontSize: "18px" }} />
                   </Button>
                 </div>
               )}
@@ -148,71 +177,92 @@ export default function Quizzes() {
           </li>
 
           {/* Quiz Items */}
-          {visibleQuizzes.map((quiz: Quiz) => (
-            <li key={quiz._id} className="wd-quiz-list-item wd-quiz list-group-item p-3 ps-1">
-              <div className="d-flex align-items-start">
-                <BsGripVertical className="me-2 fs-5" />
-                <GiNotebook className="me-3 fs-4 text-success" />
-                <div className="flex-grow-1">
-                  <Link
-                    href={`/Courses/${cid}/Quizzes/${quiz._id}`}
-                    className="wd-quiz-link text-dark text-decoration-none fw-bold"
-                  >
-                    {quiz.title}
-                  </Link>
-                  <div className="text-muted small">
-                    <strong>{getQuizAvailability(quiz).message}</strong> |{" "}
-                    <strong>Due</strong> {formatDateForDisplay(quiz.dueDate)} | {quiz.points} pts | Questions TBD
+          {filteredQuizzes.map((quiz: Quiz) => {
+            const studentAttempt = getStudentScore(quiz._id);
+            const availabilityInfo = getQuizAvailability(quiz);
+
+            return (
+              <li
+                key={quiz._id}
+                className="wd-quiz-list-item list-group-item p-0"
+                style={{ borderLeft: "4px solid #28a745" }}
+              >
+                <div className="d-flex align-items-center p-3 ps-2">
+                  <BsGripVertical className="me-2" style={{ fontSize: "20px", color: "#6c757d" }} />
+                  <GiNotebook className="me-3" style={{ fontSize: "24px", color: "#28a745" }} />
+                  <div className="flex-grow-1">
+                    <Link
+                      href={`/Courses/${cid}/Quizzes/${quiz._id}`}
+                      className="wd-quiz-link text-dark text-decoration-none"
+                      style={{ fontSize: "16px", fontWeight: "600" }}
+                    >
+                      {quiz.title}
+                    </Link>
+                    <div className="mt-1" style={{ fontSize: "13px", color: "#6c757d" }}>
+                      <span style={{ fontWeight: "600" }}>{availabilityInfo.message}</span>
+                      <span className="mx-1">|</span>
+                      <span style={{ fontWeight: "600" }}>Due</span> {formatDateForDisplay(quiz.dueDate)}
+                      <span className="mx-1">|</span>
+                      {quiz.points} pts
+                      <span className="mx-1">|</span>
+                      Questions TBD
+                      {studentAttempt && (
+                        <>
+                          <span className="mx-1">|</span>
+                          <span style={{ fontWeight: "600" }}>Score: {studentAttempt.score}/{quiz.points}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    {isFaculty ? (
+                      <>
+                        {quiz.published ? (
+                          <FaCheckCircle
+                            className="text-success me-3"
+                            style={{ fontSize: "20px", cursor: "pointer" }}
+                            onClick={() => handleTogglePublish(quiz)}
+                            title="Published (click to unpublish)"
+                          />
+                        ) : (
+                          <span
+                            className="me-3"
+                            style={{ fontSize: "20px", cursor: "pointer" }}
+                            onClick={() => handleTogglePublish(quiz)}
+                            title="Unpublished (click to publish)"
+                          >
+                            🚫
+                          </span>
+                        )}
+                        <Dropdown>
+                          <Dropdown.Toggle
+                            as="button"
+                            className="btn btn-link text-dark p-0 border-0"
+                            id={`dropdown-${quiz._id}`}
+                          >
+                            <IoEllipsisVertical style={{ fontSize: "20px" }} />
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu align="end">
+                            <Dropdown.Item onClick={() => router.push(`/Courses/${cid}/Quizzes/${quiz._id}/edit`)}>
+                              Edit
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleDelete(quiz._id)}>
+                              Delete
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleTogglePublish(quiz)}>
+                              {quiz.published ? "Unpublish" : "Publish"}
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </>
+                    ) : (
+                      <FaCheckCircle className="text-success" style={{ fontSize: "20px" }} />
+                    )}
                   </div>
                 </div>
-                <div className="d-flex align-items-center">
-                  {isFaculty ? (
-                    <>
-                      {quiz.published ? (
-                        <FaCheckCircle
-                          className="text-success me-3 fs-5"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handleTogglePublish(quiz)}
-                          title="Published (click to unpublish)"
-                        />
-                      ) : (
-                        <span
-                          className="me-3 fs-5"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handleTogglePublish(quiz)}
-                          title="Unpublished (click to publish)"
-                        >
-                          🚫
-                        </span>
-                      )}
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="link"
-                          className="text-dark p-0 border-0"
-                          id={`dropdown-${quiz._id}`}
-                        >
-                          <IoEllipsisVertical className="fs-4" />
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => router.push(`/Courses/${cid}/Quizzes/${quiz._id}/edit`)}>
-                            Edit
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleDelete(quiz._id)}>
-                            Delete
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleTogglePublish(quiz)}>
-                            {quiz.published ? "Unpublish" : "Publish"}
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </>
-                  ) : (
-                    <span className="text-muted small">View →</span>
-                  )}
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

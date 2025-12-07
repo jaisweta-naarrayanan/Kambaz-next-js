@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import * as quizClient from "../../client";
 import * as questionClient from "../../Questions/client";
 import { Quiz, Question } from "@/app/(Kambaz)/Database/types";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Alert } from "react-bootstrap";
 
 export default function QuizPreview() {
   const { cid, qid } = useParams();
@@ -76,48 +76,53 @@ export default function QuizPreview() {
 
   return (
     <div id="wd-quiz-preview" className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h3>{quiz.title}</h3>
-          <p className="text-muted">Preview Mode - Answers will not be saved</p>
-        </div>
-        <Button variant="secondary" onClick={() => router.push(`/Courses/${cid}/Quizzes/${qid}/edit`)}>
-          Edit Quiz
-        </Button>
-      </div>
+      {/* Quiz Title */}
+      <h2 className="mb-3">{quiz.title}</h2>
 
-      {quiz.description && (
-        <div className="alert alert-info mb-4" dangerouslySetInnerHTML={{ __html: quiz.description }} />
+      {/* Preview Alert */}
+      <Alert variant="light" className="border" style={{ backgroundColor: "#fce8e8", borderColor: "#f8d7da" }}>
+        <span className="text-danger">⚠</span> This is a preview of the published version of the quiz
+      </Alert>
+
+      {/* Quiz Started Info */}
+      {!showResults && (
+        <p className="text-muted mb-3">Started: {new Date().toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true
+        })}</p>
       )}
 
-      <div className="border rounded p-4 mb-4">
-        <div className="mb-3">
-          <strong>Quiz Type:</strong> {quiz.quizType} | <strong>Points:</strong> {quiz.points} |{" "}
-          <strong>Time Limit:</strong> {quiz.timeLimit} minutes
-        </div>
-        {quiz.multipleAttempts && (
-          <div className="mb-2">
-            <strong>Multiple Attempts:</strong> Yes ({quiz.howManyAttempts} attempts allowed)
-          </div>
-        )}
-      </div>
+      {/* Quiz Instructions */}
+      {quiz.description && (
+        <>
+          <h4 className="mb-3 pb-2 border-bottom">Quiz Instructions</h4>
+          <div className="mb-4" dangerouslySetInnerHTML={{ __html: quiz.description }} />
+        </>
+      )}
 
+      {/* Questions */}
       <Form>
         {questions.map((question, index) => (
           <div
             key={question._id}
-            className={`border rounded p-4 mb-3 ${showResults ? (isAnswerCorrect(question) ? "border-success" : "border-danger") : ""
+            className={`mb-4 p-4 border rounded ${showResults ? (isAnswerCorrect(question) ? "border-success bg-light" : "border-danger bg-light") : "bg-light"
               }`}
           >
+            {/* Question Header */}
             <div className="d-flex justify-content-between align-items-start mb-3">
-              <h5>
+              <h5 className="mb-0">
                 Question {index + 1} {showResults && (isAnswerCorrect(question) ? "✅" : "❌")}
               </h5>
               <span className="badge bg-secondary">{question.points} pts</span>
             </div>
 
+            {/* Question Text */}
             <div className="mb-3" dangerouslySetInnerHTML={{ __html: question.question || question.title }} />
 
+            {/* Question Type: Multiple Choice */}
             {question.type === "Multiple Choice" && question.choices && (
               <div>
                 {question.choices.map((choice, choiceIndex) => (
@@ -138,6 +143,7 @@ export default function QuizPreview() {
               </div>
             )}
 
+            {/* Question Type: True/False */}
             {question.type === "True/False" && (
               <div>
                 <Form.Check
@@ -163,6 +169,7 @@ export default function QuizPreview() {
               </div>
             )}
 
+            {/* Question Type: Fill in the Blank */}
             {question.type === "Fill in the Blank" && (
               <div>
                 <Form.Control
@@ -183,29 +190,29 @@ export default function QuizPreview() {
         ))}
       </Form>
 
+      {/* Action Buttons */}
       {!showResults ? (
-        <div className="d-flex justify-content-end gap-2">
-          <Button variant="secondary" onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={calculateScore}>
-            Submit Preview
-          </Button>
-        </div>
-      ) : (
-        <div className="border rounded p-4 bg-light">
-          <h4>Preview Results</h4>
-          <p className="mb-0">
-            <strong>Score:</strong> {score} / {quiz.points} ({((score / quiz.points) * 100).toFixed(1)}%)
-          </p>
-          <div className="mt-3">
-            <Button variant="primary" onClick={() => router.push(`/Courses/${cid}/Quizzes/${qid}/edit`)}>
-              Edit Quiz
-            </Button>
-            <Button variant="secondary" className="ms-2" onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-              Back to Quizzes
+        <div className="border-top pt-3">
+          <div className="d-flex justify-content-between align-items-center">
+            <p className="text-muted mb-0">Quiz saved at {new Date().toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true
+            })}</p>
+            <Button variant="secondary" onClick={calculateScore}>
+              Submit Quiz
             </Button>
           </div>
+        </div>
+      ) : (
+        <div className="border rounded p-4 bg-light mt-4">
+          <h4>Preview Results</h4>
+          <p className="mb-3">
+            <strong>Score:</strong> {score} / {quiz.points} ({((score / quiz.points) * 100).toFixed(1)}%)
+          </p>
+          <Button variant="outline-secondary" onClick={() => router.push(`/Courses/${cid}/Quizzes/${qid}/edit`)}>
+            <span style={{ fontSize: "14px" }}>🔗</span> Keep Editing This Quiz
+          </Button>
         </div>
       )}
     </div>
