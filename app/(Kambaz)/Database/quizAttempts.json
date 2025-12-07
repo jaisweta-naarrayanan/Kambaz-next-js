@@ -1,0 +1,68 @@
+[
+  {
+    "_id": "attempt001",
+    "quiz": "quiz001",
+    "student": "234",
+    "answers": [
+      {
+        "questionId": "q001",
+        "answer": 0
+      },
+      {
+        "questionId": "q002",
+        "answer": true
+      },
+      {
+        "questionId": "q003",
+        "answer": "mf"
+      }
+    ],
+    "score": 10,
+    "attemptNumber": 1,
+    "submittedAt": "2024-12-10T14:30:00.000Z"
+  },
+  {
+    "_id": "attempt002",
+    "quiz": "quiz001",
+    "student": "456",
+    "answers": [
+      {
+        "questionId": "q001",
+        "answer": 2
+      },
+      {
+        "questionId": "q002",
+        "answer": true
+      },
+      {
+        "questionId": "q003",
+        "answer": "m1"
+      }
+    ],
+    "score": 7,
+    "attemptNumber": 1,
+    "submittedAt": "2024-12-10T15:45:00.000Z"
+  },
+  {
+    "_id": "attempt003",
+    "quiz": "quiz002",
+    "student": "234",
+    "answers": [
+      {
+        "questionId": "q004",
+        "answer": 1
+      },
+      {
+        "questionId": "q005",
+        "answer": true
+      },
+      {
+        "questionId": "q006",
+        "answer": "seconds"
+      }
+    ],
+    "score": 15,
+    "attemptNumber": 1,
+    "submittedAt": "2024-12-12T10:20:00.000Z"
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "_id": "q001",
+    "quiz": "quiz001",
+    "title": "History Question",
+    "type": "Multiple Choice",
+    "points": 3,
+    "question": "<p>Who is considered the father of modern rocketry?</p>",
+    "choices": [
+      "Robert Goddard",
+      "Werner von Braun",
+      "Konstantin Tsiolkovsky",
+      "Hermann Oberth"
+    ],
+    "correctAnswer": 0
+  },
+  {
+    "_id": "q002",
+    "quiz": "quiz001",
+    "title": "True/False - Newton's Laws",
+    "type": "True/False",
+    "points": 2,
+    "question": "<p>Rocket propulsion is based on Newton's Third Law of Motion.</p>",
+    "correctAnswer": true
+  },
+  {
+    "_id": "q003",
+    "quiz": "quiz001",
+    "title": "Fill in the Blank - Equation",
+    "type": "Fill in the Blank",
+    "points": 5,
+    "question": "<p>The Tsiolkovsky rocket equation is: Δv = ve * ln(m0/______)</p>",
+    "possibleAnswers": [
+      "mf",
+      "m1",
+      "final mass"
+    ],
+    "caseSensitive": false
+  },
+  {
+    "_id": "q004",
+    "quiz": "quiz002",
+    "title": "Fuel Types",
+    "type": "Multiple Choice",
+    "points": 5,
+    "question": "<p>Which of the following is a cryogenic rocket fuel?</p>",
+    "choices": [
+      "Kerosene",
+      "Liquid Hydrogen",
+      "Solid Propellant",
+      "Hydrazine"
+    ],
+    "correctAnswer": 1
+  },
+  {
+    "_id": "q005",
+    "quiz": "quiz002",
+    "title": "Combustion Chamber",
+    "type": "True/False",
+    "points": 3,
+    "question": "<p>The combustion chamber pressure directly affects the specific impulse of a rocket engine.</p>",
+    "correctAnswer": true
+  },
+  {
+    "_id": "q006",
+    "quiz": "quiz002",
+    "title": "ISP Calculation",
+    "type": "Fill in the Blank",
+    "points": 7,
+    "question": "<p>Specific impulse (Isp) is measured in ______ in SI units.</p>",
+    "possibleAnswers": [
+      "seconds",
+      "s",
+      "sec"
+    ],
+    "caseSensitive": false
+  },
+  {
+    "_id": "q007",
+    "quiz": "quiz003",
+    "title": "Lift Force",
+    "type": "Multiple Choice",
+    "points": 4,
+    "question": "<p>What is the primary force that opposes gravity in flight?</p>",
+    "choices": [
+      "Thrust",
+      "Drag",
+      "Lift",
+      "Weight"
+    ],
+    "correctAnswer": 2
+  },
+  {
+    "_id": "q008",
+    "quiz": "quiz003",
+    "title": "Bernoulli's Principle",
+    "type": "True/False",
+    "points": 4,
+    "question": "<p>Bernoulli's principle states that an increase in fluid speed occurs simultaneously with a decrease in pressure.</p>",
+    "correctAnswer": true
+  }
+]
