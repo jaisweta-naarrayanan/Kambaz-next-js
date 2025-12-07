@@ -42,7 +42,7 @@ export default function Quizzes() {
   useEffect(() => {
     const fetchAllAttempts = async () => {
       if (!isFaculty && cid) {
-        const courseQuizzes = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
+        const courseQuizzes: Quiz[] = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
         const allAttempts: any = [];
 
         for (const quiz of courseQuizzes) {
@@ -99,15 +99,15 @@ export default function Quizzes() {
     router.push(`/Courses/${cid}/Quizzes/${createdQuiz._id}/edit`);
   };
 
-  const courseQuizzes = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
-  const visibleQuizzes = isFaculty ? courseQuizzes : courseQuizzes.filter((quiz: Quiz) => quiz.published);
-  const filteredQuizzes = visibleQuizzes.filter((quiz: Quiz) =>
+  const courseQuizzes: Quiz[] = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
+  const visibleQuizzes: Quiz[] = isFaculty ? courseQuizzes : courseQuizzes.filter((quiz: Quiz) => quiz.published);
+  const filteredQuizzes: Quiz[] = visibleQuizzes.filter((quiz: Quiz) =>
     quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStudentScore = (quizId: string) => {
     if (isFaculty || reduxAttempts.length === 0) return null;
-    const quizAttempts = reduxAttempts.filter((a: any) => a.quiz === quizId);
+    const quizAttempts: any[] = reduxAttempts.filter((a: any) => a.quiz === quizId);
     if (quizAttempts.length === 0) return null;
     return quizAttempts[0];
   };
