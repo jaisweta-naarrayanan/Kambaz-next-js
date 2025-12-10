@@ -79,6 +79,11 @@ export default function QuizDetails() {
         </div>
 
         <div className="row mb-3">
+          <div className="col-md-3 fw-bold">Number of Questions</div>
+          <div className="col-md-9">{quiz.questionCount || 0}</div>
+        </div>
+
+        <div className="row mb-3">
           <div className="col-md-3 fw-bold">Assignment Group</div>
           <div className="col-md-9">{quiz.assignmentGroup}</div>
         </div>

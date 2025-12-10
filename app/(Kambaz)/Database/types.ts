@@ -66,6 +66,7 @@ export interface Quiz {
   availableDate: string;
   availableUntilDate: string;
   published: boolean;
+  questionCount?: number;
 }
 
 export interface Question {
@@ -79,8 +80,9 @@ export interface Question {
   choices?: string[];
   correctAnswer?: number | boolean; // index for MC, boolean for T/F
   // Fill in the Blank fields
-  possibleAnswers?: string[];
+  possibleAnswers?: { variable: string; answers: string[] }[];
   caseSensitive?: boolean;
+  questionGroup?: string;
 }
 
 export interface QuizAttempt {
@@ -96,4 +98,11 @@ export interface QuizAttempt {
   submittedAt: string;
 }
 
-
+export interface QuestionGroup {
+  _id: string;
+  title: string;
+  quiz: string;
+  course: string;
+  pointsPerQuestion: number;
+  pickCount: number;
+}

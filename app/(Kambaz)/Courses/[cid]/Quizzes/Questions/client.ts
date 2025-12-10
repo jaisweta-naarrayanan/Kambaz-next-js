@@ -7,6 +7,11 @@ export const getQuestionsForQuiz = async (quizId: string) => {
   return response.data;
 };
 
+export const getQuestionsForCourse = async (courseId: string) => {
+  const response = await axios.get(`${API_BASE}/courses/${courseId}/questions`, { withCredentials: true });
+  return response.data;
+};
+
 export const createQuestion = async (quizId: string, question: any) => {
   const response = await axios.post(
     `${API_BASE}/quizzes/${quizId}/questions`,

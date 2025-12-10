@@ -8,7 +8,7 @@ import * as questionClient from "../../../Questions/client";
 import * as attemptClient from "../../../Attempts/client";
 import { Quiz, Question, QuizAttempt } from "@/app/(Kambaz)/Database/types";
 import { Button, Alert } from "react-bootstrap";
-import { formatDateLong } from "../../../utils";
+import { formatDateLong, shouldShowCorrectAnswers } from "../../../utils";
 
 export default function QuizResults() {
   const { cid, qid, attemptId } = useParams();
@@ -49,11 +49,16 @@ export default function QuizResults() {
     if (question.type === "Multiple Choice" || question.type === "True/False") {
       return studentAnswer === question.correctAnswer;
     } else if (question.type === "Fill in the Blank" && question.possibleAnswers) {
-      return question.possibleAnswers.some((ans) =>
-        question.caseSensitive
-          ? ans === studentAnswer
-          : ans.toLowerCase() === studentAnswer.toLowerCase()
-      );
+      if (typeof studentAnswer === 'object') {
+        return question.possibleAnswers.every(pa => {
+          const userVal = studentAnswer[pa.variable] || "";
+          return pa.answers.some(ans =>
+            question.caseSensitive
+              ? ans === userVal
+              : ans.toLowerCase() === userVal.toLowerCase()
+          );
+        });
+      }
     }
     return false;
   };
@@ -68,6 +73,7 @@ export default function QuizResults() {
   }
 
   const percentage = ((attempt.score / quiz.points) * 100).toFixed(1);
+  const showCorrectAnswers = shouldShowCorrectAnswers(quiz, attempt.attemptNumber, quiz.howManyAttempts);
 
   return (
     <div id="wd-quiz-results" className="p-4">
@@ -151,15 +157,17 @@ export default function QuizResults() {
                     return (
                       <li
                         key={choiceIndex}
-                        className={`p-2 mb-1 rounded ${isCorrectChoice
+                        className={`p-2 mb-1 rounded ${showCorrectAnswers && isCorrectChoice
                           ? "bg-success text-white"
                           : isStudentChoice
-                            ? "bg-danger text-white"
+                            ? isCorrectChoice && showCorrectAnswers
+                              ? "bg-success text-white"
+                              : "bg-danger text-white"
                             : ""
                           }`}
                       >
                         {isStudentChoice && "👤 "}
-                        {isCorrectChoice && "✓ "}
+                        {showCorrectAnswers && isCorrectChoice && "✓ "}
                         {choice}
                       </li>
                     );
@@ -177,7 +185,7 @@ export default function QuizResults() {
                     {studentAnswer !== undefined ? (studentAnswer ? "True" : "False") : "Not answered"}
                   </span>
                 </div>
-                {!correct && (
+                {!correct && showCorrectAnswers && (
                   <div>
                     <strong>Correct Answer:</strong>{" "}
                     <span className="text-success">
@@ -193,14 +201,30 @@ export default function QuizResults() {
               <div>
                 <div className="mb-2">
                   <strong>Your Answer:</strong>{" "}
-                  <span className={correct ? "text-success" : "text-danger"}>
-                    {studentAnswer || "Not answered"}
-                  </span>
+                  <div className={correct ? "text-success" : "text-danger"}>
+                    {studentAnswer && typeof studentAnswer === 'object' ? (
+                      <ul className="list-unstyled mb-0">
+                        {Object.entries(studentAnswer).map(([key, val]) => (
+                          <li key={key}>
+                            <strong>[{key}]:</strong> {val as string}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      "Not answered"
+                    )}
+                  </div>
                 </div>
-                {!correct && question.possibleAnswers && (
+                {!correct && showCorrectAnswers && question.possibleAnswers && (
                   <div>
-                    <strong>Correct Answers:</strong>{" "}
-                    <span className="text-success">{question.possibleAnswers.join(", ")}</span>
+                    <strong>Correct Answers:</strong>
+                    <ul className="list-unstyled mb-0 text-success">
+                      {question.possibleAnswers.map((pa, i) => (
+                        <li key={i}>
+                          <strong>[{pa.variable}]:</strong> {pa.answers.join(" or ")}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>

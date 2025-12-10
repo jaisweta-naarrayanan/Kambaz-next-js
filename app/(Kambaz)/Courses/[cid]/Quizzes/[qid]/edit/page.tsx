@@ -9,6 +9,7 @@ import * as questionClient from "../../Questions/client";
 import { Quiz, Question } from "@/app/(Kambaz)/Database/types";
 import { Button, Form, Tabs, Tab } from "react-bootstrap";
 import { FaPlus, FaTrash, FaEdit } from "react-icons/fa";
+import { BsSearch } from "react-icons/bs";
 
 // Utility function to format date for datetime-local input
 const formatDateForInput = (dateString: string) => {
@@ -16,6 +17,11 @@ const formatDateForInput = (dateString: string) => {
   const date = new Date(dateString);
   return date.toISOString().slice(0, 16);
 };
+
+import FindQuestionsModal from "./FindQuestionsModal";
+import QuestionGroupEditor from "./QuestionGroupEditor";
+import * as groupClient from "../../QuestionGroups/client";
+import { QuestionGroup } from "@/app/(Kambaz)/Database/types";
 
 export default function QuizEditor() {
   const { cid, qid } = useParams();
@@ -50,6 +56,11 @@ export default function QuizEditor() {
   const [activeTab, setActiveTab] = useState("details");
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
+  const [showFindQuestionsModal, setShowFindQuestionsModal] = useState(false);
+
+  const [groups, setGroups] = useState<QuestionGroup[]>([]);
+  const [editingGroup, setEditingGroup] = useState<QuestionGroup | null>(null);
+  const [showGroupEditor, setShowGroupEditor] = useState(false);
 
   useEffect(() => {
     if (!isFaculty) {
@@ -70,6 +81,9 @@ export default function QuizEditor() {
 
         const questionsData = await questionClient.getQuestionsForQuiz(qid as string);
         dispatch(setQuestions(questionsData));
+
+        const groupsData = await groupClient.getGroupsForQuiz(qid as string);
+        setGroups(groupsData);
       }
     };
     fetchQuiz();
@@ -88,14 +102,18 @@ export default function QuizEditor() {
       const created = await quizClient.createQuiz(cid as string, quizData);
       if (publish) {
         await quizClient.publishQuiz(cid as string, created._id, true);
+        router.push(`/Courses/${cid}/Quizzes`);
+      } else {
+        router.push(`/Courses/${cid}/Quizzes/${created._id}`);
       }
-      router.push(`/Courses/${cid}/Quizzes`);
     } else {
       await quizClient.updateQuiz(cid as string, { ...quizData, _id: qid });
       if (publish) {
         await quizClient.publishQuiz(cid as string, qid as string, true);
+        router.push(`/Courses/${cid}/Quizzes`);
+      } else {
+        router.push(`/Courses/${cid}/Quizzes/${qid}`);
       }
-      router.push(`/Courses/${cid}/Quizzes`);
     }
   };
 
@@ -146,7 +164,69 @@ export default function QuizEditor() {
     setEditingQuestion(null);
   };
 
+  const handleAddQuestionsFromBank = async (selectedQuestions: Question[]) => {
+    // Create copies of selected questions for this quiz
+    for (const question of selectedQuestions) {
+      const newQuestion = {
+        ...question,
+        _id: undefined, // Let backend assign new ID
+        quiz: qid,
+      };
+      // Remove _id to ensure createQuestion treats it as new
+      delete (newQuestion as any)._id;
+      await questionClient.createQuestion(qid as string, newQuestion);
+    }
+
+    const updated = await questionClient.getQuestionsForQuiz(qid as string);
+    dispatch(setQuestions(updated));
+
+    const totalPoints = updated.reduce((sum: number, q: Question) => sum + q.points, 0);
+    setQuiz({ ...quiz, points: totalPoints });
+  };
+
+  // Group Handlers
+  const handleAddGroup = () => {
+    setEditingGroup({
+      _id: "new",
+      title: "New Question Group",
+      quiz: qid as string,
+      course: cid as string,
+      pointsPerQuestion: 1,
+      pickCount: 1,
+    });
+    setShowGroupEditor(true);
+  };
+
+  const handleEditGroup = (group: QuestionGroup) => {
+    setEditingGroup(group);
+    setShowGroupEditor(true);
+  };
+
+  const handleSaveGroup = async (group: QuestionGroup) => {
+    if (group._id === "new") {
+      await groupClient.createGroup(qid as string, group);
+    } else {
+      await groupClient.updateGroup(qid as string, group._id, group);
+    }
+    const updatedGroups = await groupClient.getGroupsForQuiz(qid as string);
+    setGroups(updatedGroups);
+    setShowGroupEditor(false);
+    setEditingGroup(null);
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (window.confirm("Are you sure you want to delete this group? Questions in this group will be ungrouped.")) {
+      await groupClient.deleteGroup(qid as string, groupId);
+      const updatedGroups = await groupClient.getGroupsForQuiz(qid as string);
+      setGroups(updatedGroups);
+
+      // Ideally we should also update questions to remove group reference, 
+      // but backend deleteGroup could handle this or we just leave them orphaned (they will show as ungrouped)
+    }
+  };
+
   const quizQuestions = reduxQuestions.filter((q: Question) => q.quiz === qid);
+  const ungroupedQuestions = quizQuestions.filter((q: Question) => !q.questionGroup);
 
   return (
     <div id="wd-quiz-editor" className="p-4">
@@ -398,15 +478,34 @@ export default function QuizEditor() {
         <Tab eventKey="questions" title="Questions" disabled={qid === "new"}>
           <div className="mb-3 d-flex justify-content-between align-items-center">
             <h5>Manage Questions</h5>
-            <Button variant="danger" onClick={handleAddQuestion}>
-              <FaPlus /> New Question
-            </Button>
+            <div className="d-flex gap-2">
+              <Button variant="secondary" onClick={handleAddGroup}>
+                <FaPlus /> Group
+              </Button>
+              <Button variant="secondary" onClick={() => setShowFindQuestionsModal(true)}>
+                <BsSearch /> Find Questions
+              </Button>
+              <Button variant="danger" onClick={handleAddQuestion}>
+                <FaPlus /> New Question
+              </Button>
+            </div>
           </div>
 
           {qid === "new" && (
             <div className="alert alert-info">
               Please save the quiz first before adding questions.
             </div>
+          )}
+
+          {showGroupEditor && editingGroup && (
+            <QuestionGroupEditor
+              group={editingGroup}
+              onSave={handleSaveGroup}
+              onCancel={() => {
+                setShowGroupEditor(false);
+                setEditingGroup(null);
+              }}
+            />
           )}
 
           {showQuestionEditor && editingQuestion && (
@@ -417,25 +516,80 @@ export default function QuizEditor() {
                 setShowQuestionEditor(false);
                 setEditingQuestion(null);
               }}
+              groups={groups}
             />
           )}
 
-          {!showQuestionEditor && quizQuestions.length === 0 && (
+          {!showQuestionEditor && !showGroupEditor && quizQuestions.length === 0 && groups.length === 0 && (
             <div className="text-center py-5 text-muted">
               No questions yet. Click "New Question" to add one.
             </div>
           )}
 
-          {!showQuestionEditor && quizQuestions.length > 0 && (
-            <div>
-              <div className="mb-2">
-                <strong>Total Points: {quiz.points}</strong>
+          {/* Render Groups */}
+          {groups.map((group) => {
+            const groupQuestions = quizQuestions.filter((q: Question) => q.questionGroup === group._id);
+            return (
+              <div key={group._id} className="card mb-3 border-secondary">
+                <div className="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>{group.title}</strong>
+                    <span className="ms-3 small">Pick {group.pickCount} questions, {group.pointsPerQuestion} pts each</span>
+                  </div>
+                  <div>
+                    <Button variant="link" className="text-white p-0 me-2" onClick={() => handleEditGroup(group)}>
+                      <FaEdit />
+                    </Button>
+                    <Button variant="link" className="text-white p-0" onClick={() => handleDeleteGroup(group._id)}>
+                      <FaTrash />
+                    </Button>
+                  </div>
+                </div>
+                <div className="card-body p-0">
+                  {groupQuestions.length === 0 ? (
+                    <div className="p-3 text-center text-muted small">No questions in this group.</div>
+                  ) : (
+                    <ul className="list-group list-group-flush">
+                      {groupQuestions.map((q: Question, index: number) => (
+                        <li key={q._id} className="list-group-item d-flex justify-content-between align-items-center ps-4">
+                          <div>
+                            <strong>Q:</strong> {q.title} <span className="badge bg-secondary">{q.type}</span>
+                          </div>
+                          <div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => handleEditQuestion(q)}
+                            >
+                              <FaEdit />
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteQuestion(q._id)}
+                            >
+                              <FaTrash />
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
+            );
+          })}
+
+          {/* Render Ungrouped Questions */}
+          {ungroupedQuestions.length > 0 && (
+            <div>
+              {groups.length > 0 && <h6 className="mt-4 mb-2">Ungrouped Questions</h6>}
               <ul className="list-group">
-                {quizQuestions.map((q: Question, index: number) => (
+                {ungroupedQuestions.map((q: Question, index: number) => (
                   <li key={q._id} className="list-group-item d-flex justify-content-between align-items-center">
                     <div>
-                      <strong>Q{index + 1}:</strong> {q.title} <span className="badge bg-secondary">{q.type}</span> - {q.points} pts
+                      <strong>Q:</strong> {q.title} <span className="badge bg-secondary">{q.type}</span> - {q.points} pts
                     </div>
                     <div>
                       <Button
@@ -444,14 +598,14 @@ export default function QuizEditor() {
                         className="me-2"
                         onClick={() => handleEditQuestion(q)}
                       >
-                        <FaEdit /> Edit
+                        <FaEdit />
                       </Button>
                       <Button
                         variant="outline-danger"
                         size="sm"
                         onClick={() => handleDeleteQuestion(q._id)}
                       >
-                        <FaTrash /> Delete
+                        <FaTrash />
                       </Button>
                     </div>
                   </li>
@@ -475,6 +629,13 @@ export default function QuizEditor() {
           Save & Publish
         </Button>
       </div>
+
+      <FindQuestionsModal
+        show={showFindQuestionsModal}
+        onHide={() => setShowFindQuestionsModal(false)}
+        onAddQuestions={handleAddQuestionsFromBank}
+        courseId={cid as string}
+      />
     </div>
   );
 }
@@ -484,12 +645,37 @@ function QuestionEditor({
   question,
   onSave,
   onCancel,
+  groups,
 }: {
   question: Question;
   onSave: (question: Question) => void;
   onCancel: () => void;
+  groups: QuestionGroup[];
 }) {
   const [editedQuestion, setEditedQuestion] = useState<Question>(question);
+
+  // Parse variables from question text for Fill in Multiple Blanks
+  useEffect(() => {
+    if (editedQuestion.type === "Fill in the Blank") {
+      const regex = /\[(.*?)\]/g;
+      const matches = [...editedQuestion.question.matchAll(regex)];
+      const variables = matches.map(m => m[1]);
+
+      // Initialize possibleAnswers for new variables
+      if (variables.length > 0) {
+        const currentAnswers = editedQuestion.possibleAnswers || [];
+        const newAnswers = variables.map(variable => {
+          const existing = currentAnswers.find(a => a.variable === variable);
+          return existing || { variable, answers: [""] };
+        });
+
+        // Only update if there's a change to avoid infinite loop
+        if (JSON.stringify(newAnswers) !== JSON.stringify(currentAnswers)) {
+          setEditedQuestion(prev => ({ ...prev, possibleAnswers: newAnswers }));
+        }
+      }
+    }
+  }, [editedQuestion.question, editedQuestion.type]);
 
   const handleTypeChange = (type: Question["type"]) => {
     if (type === "Multiple Choice") {
@@ -514,7 +700,7 @@ function QuestionEditor({
       setEditedQuestion({
         ...editedQuestion,
         type,
-        possibleAnswers: [""],
+        possibleAnswers: [], // Will be populated by useEffect based on text
         caseSensitive: false,
         choices: undefined,
         correctAnswer: undefined,
@@ -542,21 +728,29 @@ function QuestionEditor({
     }
   };
 
-  const handleAddPossibleAnswer = () => {
+  const handleAddAnswerForVariable = (variableIndex: number) => {
     if (editedQuestion.possibleAnswers) {
-      setEditedQuestion({
-        ...editedQuestion,
-        possibleAnswers: [...editedQuestion.possibleAnswers, ""],
-      });
+      const newPossibleAnswers = [...editedQuestion.possibleAnswers];
+      newPossibleAnswers[variableIndex].answers.push("");
+      setEditedQuestion({ ...editedQuestion, possibleAnswers: newPossibleAnswers });
     }
   };
 
-  const handleRemovePossibleAnswer = (index: number) => {
-    if (editedQuestion.possibleAnswers && editedQuestion.possibleAnswers.length > 1) {
-      setEditedQuestion({
-        ...editedQuestion,
-        possibleAnswers: editedQuestion.possibleAnswers.filter((_, i) => i !== index),
-      });
+  const handleRemoveAnswerForVariable = (variableIndex: number, answerIndex: number) => {
+    if (editedQuestion.possibleAnswers) {
+      const newPossibleAnswers = [...editedQuestion.possibleAnswers];
+      if (newPossibleAnswers[variableIndex].answers.length > 1) {
+        newPossibleAnswers[variableIndex].answers = newPossibleAnswers[variableIndex].answers.filter((_, i) => i !== answerIndex);
+        setEditedQuestion({ ...editedQuestion, possibleAnswers: newPossibleAnswers });
+      }
+    }
+  };
+
+  const handleAnswerChangeForVariable = (variableIndex: number, answerIndex: number, value: string) => {
+    if (editedQuestion.possibleAnswers) {
+      const newPossibleAnswers = [...editedQuestion.possibleAnswers];
+      newPossibleAnswers[variableIndex].answers[answerIndex] = value;
+      setEditedQuestion({ ...editedQuestion, possibleAnswers: newPossibleAnswers });
     }
   };
 
@@ -575,7 +769,7 @@ function QuestionEditor({
         </Form.Group>
 
         <div className="row mb-3">
-          <div className="col-md-6">
+          <div className="col-md-4">
             <Form.Label>Question Type</Form.Label>
             <Form.Select
               value={editedQuestion.type}
@@ -583,10 +777,24 @@ function QuestionEditor({
             >
               <option value="Multiple Choice">Multiple Choice</option>
               <option value="True/False">True/False</option>
-              <option value="Fill in the Blank">Fill in the Blank</option>
+              <option value="Fill in the Blank">Fill in Multiple Blanks</option>
             </Form.Select>
           </div>
-          <div className="col-md-6">
+          <div className="col-md-4">
+            <Form.Label>Group</Form.Label>
+            <Form.Select
+              value={editedQuestion.questionGroup || ""}
+              onChange={(e) => setEditedQuestion({ ...editedQuestion, questionGroup: e.target.value || undefined })}
+            >
+              <option value="">Ungrouped</option>
+              {groups.map((g) => (
+                <option key={g._id} value={g._id}>
+                  {g.title}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+          <div className="col-md-4">
             <Form.Label>Points</Form.Label>
             <Form.Control
               type="number"
@@ -599,6 +807,11 @@ function QuestionEditor({
 
         <Form.Group className="mb-3">
           <Form.Label>Question Text</Form.Label>
+          <Form.Text className="text-muted d-block mb-2">
+            {editedQuestion.type === "Fill in the Blank"
+              ? "Use [variable] to create blanks. Example: 'Roses are [color1], violets are [color2]'"
+              : "Enter the question text"}
+          </Form.Text>
           <Form.Control
             as="textarea"
             rows={3}
@@ -672,40 +885,56 @@ function QuestionEditor({
 
         {editedQuestion.type === "Fill in the Blank" && editedQuestion.possibleAnswers && (
           <div className="mb-3">
-            <Form.Label className="fw-bold">Possible Correct Answers</Form.Label>
-            <small className="text-muted d-block mb-2">Students can provide any of these answers</small>
-            {editedQuestion.possibleAnswers.map((answer, index) => (
-              <div key={index} className="d-flex align-items-center mb-2">
-                <Form.Control
-                  type="text"
-                  value={answer}
-                  onChange={(e) => {
-                    const newAnswers = [...editedQuestion.possibleAnswers!];
-                    newAnswers[index] = e.target.value;
-                    setEditedQuestion({ ...editedQuestion, possibleAnswers: newAnswers });
-                  }}
-                  placeholder={`Answer ${index + 1}`}
-                />
-                {editedQuestion.possibleAnswers!.length > 1 && (
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    className="ms-2"
-                    onClick={() => handleRemovePossibleAnswer(index)}
-                  >
-                    <FaTrash />
-                  </Button>
-                )}
+            <Form.Label className="fw-bold">Correct Answers</Form.Label>
+            {editedQuestion.possibleAnswers.length === 0 ? (
+              <div className="alert alert-warning">
+                No blanks detected. Add variables like [color] in the question text above.
               </div>
-            ))}
-            <Button variant="outline-secondary" size="sm" onClick={handleAddPossibleAnswer} className="mb-2">
-              <FaPlus /> Add Answer
-            </Button>
+            ) : (
+              editedQuestion.possibleAnswers.map((pa, vIndex) => (
+                <div key={vIndex} className="card mb-3 p-3 bg-white">
+                  <h6 className="fw-bold text-primary">Blank for [{pa.variable}]</h6>
+                  <small className="text-muted d-block mb-2">List all acceptable answers for this blank</small>
+
+                  {pa.answers.map((ans, aIndex) => (
+                    <div key={aIndex} className="d-flex align-items-center mb-2">
+                      <Form.Control
+                        type="text"
+                        value={ans}
+                        onChange={(e) => handleAnswerChangeForVariable(vIndex, aIndex, e.target.value)}
+                        placeholder={`Acceptable Answer ${aIndex + 1}`}
+                      />
+                      {pa.answers.length > 1 && (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          className="ms-2"
+                          onClick={() => handleRemoveAnswerForVariable(vIndex, aIndex)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <div>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => handleAddAnswerForVariable(vIndex)}
+                    >
+                      <FaPlus /> Add Another Answer
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+
             <Form.Check
               type="checkbox"
               label="Case Sensitive"
               checked={editedQuestion.caseSensitive}
               onChange={(e) => setEditedQuestion({ ...editedQuestion, caseSensitive: e.target.checked })}
+              className="mt-3"
             />
           </div>
         )}

@@ -101,9 +101,9 @@ export default function Quizzes() {
 
   const courseQuizzes: Quiz[] = reduxQuizzes.filter((quiz: Quiz) => quiz.course === cid);
   const visibleQuizzes: Quiz[] = isFaculty ? courseQuizzes : courseQuizzes.filter((quiz: Quiz) => quiz.published);
-  const filteredQuizzes: Quiz[] = visibleQuizzes.filter((quiz: Quiz) =>
-    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredQuizzes: Quiz[] = visibleQuizzes
+    .filter((quiz: Quiz) => quiz.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a: Quiz, b: Quiz) => new Date(a.availableDate).getTime() - new Date(b.availableDate).getTime());
 
   const getStudentScore = (quizId: string) => {
     if (isFaculty || reduxAttempts.length === 0) return null;
@@ -205,7 +205,7 @@ export default function Quizzes() {
                       <span className="mx-1">|</span>
                       {quiz.points} pts
                       <span className="mx-1">|</span>
-                      Questions TBD
+                      {quiz.questionCount || 0} Questions
                       {studentAttempt && (
                         <>
                           <span className="mx-1">|</span>

@@ -68,6 +68,14 @@ export default function QuizTaking() {
     setAnswers({ ...answers, [questionId]: answer });
   };
 
+  const handleMultiBlankChange = (questionId: string, variable: string, value: string) => {
+    const currentAnswer = answers[questionId] || {};
+    setAnswers({
+      ...answers,
+      [questionId]: { ...currentAnswer, [variable]: value },
+    });
+  };
+
   const calculateScore = () => {
     let totalScore = 0;
     questions.forEach((q) => {
@@ -79,12 +87,18 @@ export default function QuizTaking() {
       } else if (q.type === "True/False" && userAnswer === q.correctAnswer) {
         totalScore += q.points;
       } else if (q.type === "Fill in the Blank" && q.possibleAnswers) {
-        const isCorrect = q.possibleAnswers.some((ans) =>
-          q.caseSensitive
-            ? ans === userAnswer
-            : ans.toLowerCase() === userAnswer.toLowerCase()
-        );
-        if (isCorrect) totalScore += q.points;
+        // Check if all blanks are correct
+        if (typeof userAnswer === 'object') {
+          const allCorrect = q.possibleAnswers.every(pa => {
+            const userVal = userAnswer[pa.variable] || "";
+            return pa.answers.some(ans =>
+              q.caseSensitive
+                ? ans === userVal
+                : ans.toLowerCase() === userVal.toLowerCase()
+            );
+          });
+          if (allCorrect) totalScore += q.points;
+        }
       }
     });
     return totalScore;
@@ -144,6 +158,88 @@ export default function QuizTaking() {
       </div>
     );
   }
+
+  const renderQuestion = (question: Question, index?: number) => {
+    const questionNumber = index !== undefined ? index + 1 : currentQuestionIndex + 1;
+
+    return (
+      <div className="mb-4 p-4 border rounded bg-light">
+        {/* Question Header */}
+        <div className="d-flex justify-content-between align-items-start mb-3">
+          <h5 className="mb-0">Question {questionNumber}</h5>
+          <span className="badge bg-secondary">{question.points} pts</span>
+        </div>
+
+        {/* Question Text & Inputs */}
+        <div className="mb-3">
+          {question.type === "Fill in the Blank" ? (
+            <div>
+              {/* Render text with inputs for variables */}
+              {question.question.split(/(\[.*?\])/g).map((part, i) => {
+                const match = part.match(/\[(.*?)\]/);
+                if (match) {
+                  const variable = match[1];
+                  return (
+                    <span key={i} className="d-inline-block mx-1">
+                      <Form.Control
+                        type="text"
+                        size="sm"
+                        style={{ width: "150px", display: "inline-block" }}
+                        value={(answers[question._id] && answers[question._id][variable]) || ""}
+                        onChange={(e) => handleMultiBlankChange(question._id, variable, e.target.value)}
+                      />
+                    </span>
+                  );
+                }
+                return <span key={i}>{part}</span>;
+              })}
+            </div>
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: question.question || question.title }} />
+          )}
+        </div>
+
+        {/* Question Type: Multiple Choice */}
+        {question.type === "Multiple Choice" && question.choices && (
+          <div>
+            {question.choices.map((choice, choiceIndex) => (
+              <Form.Check
+                key={choiceIndex}
+                type="radio"
+                name={`question-${question._id}`}
+                label={choice}
+                value={choiceIndex}
+                checked={answers[question._id] === choiceIndex}
+                onChange={() => handleAnswerChange(question._id, choiceIndex)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Question Type: True/False */}
+        {question.type === "True/False" && (
+          <div>
+            <Form.Check
+              type="radio"
+              name={`question-${question._id}`}
+              label="True"
+              value="true"
+              checked={answers[question._id] === true}
+              onChange={() => handleAnswerChange(question._id, true)}
+            />
+            <Form.Check
+              type="radio"
+              name={`question-${question._id}`}
+              label="False"
+              value="false"
+              checked={answers[question._id] === false}
+              onChange={() => handleAnswerChange(question._id, false)}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (!quizStarted) {
     return (
@@ -235,128 +331,126 @@ export default function QuizTaking() {
         </>
       )}
 
-      {quiz.oneQuestionAtATime ? (
-        // One question at a time mode
-        <div>
-          <div className="mb-3">
-            <strong>
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </strong>
-          </div>
-          {renderQuestion(questions[currentQuestionIndex])}
-
-          <div className="d-flex justify-content-between mt-4 border-top pt-3">
-            <Button
-              variant="secondary"
-              onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
-              disabled={currentQuestionIndex === 0}
-            >
-              Previous
-            </Button>
-            {currentQuestionIndex < questions.length - 1 ? (
-              <Button variant="primary" onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}>
-                Next
-              </Button>
-            ) : (
-              <Button variant="danger" onClick={handleSubmit}>
-                Submit Quiz
-              </Button>
-            )}
-          </div>
-        </div>
-      ) : (
-        // All questions at once mode
-        <div>
-          <Form>
-            {questions.map((question, index) => (
-              <div key={question._id}>
-                {renderQuestion(question, index)}
+      <div className="row">
+        <div className="col-md order-2 order-md-1">
+          {quiz.oneQuestionAtATime ? (
+            // One question at a time mode
+            <div>
+              <div className="mb-3">
+                <strong>
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </strong>
               </div>
-            ))}
-          </Form>
+              {renderQuestion(questions[currentQuestionIndex])}
 
-          <div className="border-top pt-3">
-            <div className="d-flex justify-content-between align-items-center">
-              <p className="text-muted mb-0">
-                Quiz saved at {new Date().toLocaleTimeString("en-US", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: true
-                })}
-              </p>
-              <Button variant="danger" onClick={handleSubmit}>
-                Submit Quiz
-              </Button>
+              <div className="d-flex justify-content-between mt-4 border-top pt-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
+                  disabled={currentQuestionIndex === 0}
+                >
+                  Previous
+                </Button>
+                {currentQuestionIndex < questions.length - 1 ? (
+                  <Button variant="primary" onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}>
+                    Next
+                  </Button>
+                ) : (
+                  <Button variant="danger" onClick={handleSubmit}>
+                    Submit Quiz
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            // All questions at once mode
+            <div>
+              <Form>
+                {questions.map((question, index) => (
+                  <div key={question._id} id={`question-${question._id}`}>
+                    {renderQuestion(question, index)}
+                  </div>
+                ))}
+              </Form>
+
+              <div className="border-top pt-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <p className="text-muted mb-0">
+                    Quiz saved at {new Date().toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true
+                    })}
+                  </p>
+                  <Button variant="danger" onClick={handleSubmit}>
+                    Submit Quiz
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="col-md-auto order-1 order-md-2 mb-4 mb-md-0">
+          <div
+            className="card sticky-top"
+            style={{
+              top: "20px",
+              width: "300px",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto"
+            }}
+          >
+            <div className="card-header">Question Navigator</div>
+            <div className="card-body">
+              <div className="d-flex flex-wrap gap-2">
+                {questions.map((q, idx) => (
+                  <Button
+                    key={q._id}
+                    variant={
+                      (quiz.oneQuestionAtATime && currentQuestionIndex === idx)
+                        ? "primary"
+                        : answers[q._id] !== undefined
+                          ? "outline-success"
+                          : "outline-secondary"
+                    }
+                    className="text-center"
+                    style={{ width: "45px", height: "45px" }}
+                    onClick={() => {
+                      if (quiz.oneQuestionAtATime) {
+                        setCurrentQuestionIndex(idx);
+                      } else {
+                        const element = document.getElementById(`question-${q._id}`);
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }
+                    }}
+                  >
+                    {idx + 1}
+                  </Button>
+                ))}
+              </div>
+              <div className="mt-3 small text-muted">
+                {quiz.oneQuestionAtATime && (
+                  <div className="d-flex align-items-center mb-1">
+                    <div className="bg-primary rounded me-2" style={{ width: "12px", height: "12px" }}></div>
+                    Current
+                  </div>
+                )}
+                <div className="d-flex align-items-center mb-1">
+                  <div className="border border-success text-success rounded me-2 d-flex justify-content-center align-items-center" style={{ width: "12px", height: "12px" }}></div>
+                  Answered
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="border border-secondary text-secondary rounded me-2 d-flex justify-content-center align-items-center" style={{ width: "12px", height: "12px" }}></div>
+                  Unanswered
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
-
-  function renderQuestion(question: Question, index?: number) {
-    const questionNumber = index !== undefined ? index + 1 : currentQuestionIndex + 1;
-
-    return (
-      <div className="mb-4 p-4 border rounded bg-light">
-        {/* Question Header */}
-        <div className="d-flex justify-content-between align-items-start mb-3">
-          <h5 className="mb-0">Question {questionNumber}</h5>
-          <span className="badge bg-secondary">{question.points} pts</span>
-        </div>
-
-        {/* Question Text */}
-        <div className="mb-3" dangerouslySetInnerHTML={{ __html: question.question || question.title }} />
-
-        {/* Question Type: Multiple Choice */}
-        {question.type === "Multiple Choice" && question.choices && (
-          <div>
-            {question.choices.map((choice, choiceIndex) => (
-              <Form.Check
-                key={choiceIndex}
-                type="radio"
-                name={`question-${question._id}`}
-                label={choice}
-                value={choiceIndex}
-                checked={answers[question._id] === choiceIndex}
-                onChange={() => handleAnswerChange(question._id, choiceIndex)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Question Type: True/False */}
-        {question.type === "True/False" && (
-          <div>
-            <Form.Check
-              type="radio"
-              name={`question-${question._id}`}
-              label="True"
-              value="true"
-              checked={answers[question._id] === true}
-              onChange={() => handleAnswerChange(question._id, true)}
-            />
-            <Form.Check
-              type="radio"
-              name={`question-${question._id}`}
-              label="False"
-              value="false"
-              checked={answers[question._id] === false}
-              onChange={() => handleAnswerChange(question._id, false)}
-            />
-          </div>
-        )}
-
-        {/* Question Type: Fill in the Blank */}
-        {question.type === "Fill in the Blank" && (
-          <Form.Control
-            type="text"
-            value={answers[question._id] || ""}
-            onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-            placeholder="Type your answer here"
-          />
-        )}
-      </div>
-    );
-  }
 }
